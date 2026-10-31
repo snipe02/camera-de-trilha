@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,user-scalable=no"
+    />
+    <title>Vídeo Chamada P2P</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #0a0e1a;
+        color: #fff;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* LOBBY */
+      #lobby {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        padding: 24px;
+        gap: 18px;
+      }
+      #lobby h1 {
+        font-size: 26px;
+        background: linear-gradient(135deg, #4f8cff, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      #lobby p {
+        color: #8892b0;
+        font-size: 13px;
+        text-align: center;
+        max-width: 320px;
+        line-height: 1.5;
+      }
+      .input-group {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        max-width: 360px;
+      }
+      input {
+        padding: 14px 16px;
+        border: 1px solid #2a3348;
+        border-radius: 12px;
+        background: #151b2b;
+        color: #fff;
+        font-size: 16px;
+        outline: none;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-align: center;
+        flex: 1;
+        min-width: 0;
+      }
+      input:focus {
+        border-color: #4f8cff;
+      }
+      button {
+        padding: 14px 22px;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #fff;
+        transition: all 0.15s;
+      }
+      button:active {
+        transform: scale(0.97);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #4f8cff, #6366f1);
+      }
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 360px;
+        color: #4a5568;
+        font-size: 12px;
+      }
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #2a3348;
+      }
+      #config-warn {
+        background: #7f1d1d;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 12px;
+        max-width: 360px;
+        text-align: center;
+        display: none;
+      }
+
+      /* CALL */
+      #call {
+        display: none;
+        height: 100vh;
+        position: relative;
+        background: #000;
+      }
+      #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+      }
+      #localVideo {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 100px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        transform: scaleX(-1);
+        z-index: 10;
+      }
+      #localVideo.rear {
+        transform: none;
+      }
+      #roomBadge {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        z-index: 10;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #roomBadge span:first-child {
+        font-weight: 400;
+        color: #8892b0;
+        letter-spacing: 0;
+      }
+      #controls {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+        z-index: 10;
+      }
+      .ctrl-btn {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        cursor: pointer;
+        padding: 0;
+      }
+      .ctrl-btn svg {
+        width: 22px;
+        height: 22px;
+        fill: #fff;
+      }
+      .ctrl-btn.off {
+        background: rgba(239, 68, 68, 0.85);
+      }
+      .ctrl-btn.danger {
+        background: #ef4444;
+      }
+      #status {
+        position: absolute;
+        bottom: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.75);
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 10;
+        white-space: nowrap;
+      }
+      #log {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-height: 35vh;
+        overflow-y: auto;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 10px 14px;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        line-height: 1.6;
+        z-index: 20;
+        border-top: 1px solid #222;
+        transition: max-height 0.2s;
+      }
+      #log.collapsed {
+        max-height: 26px;
+        overflow: hidden;
+      }
+      #log .l {
+        color: #8a93a6;
+      }
+      #log .ok {
+        color: #10b981;
+      }
+      #log .err {
+        color: #f87171;
+      }
+      #log .warn {
+        color: #fbbf24;
+      }
+      #log .step {
+        color: #60a5fa;
+        font-weight: 600;
+      }
+      #log-toggle {
+        position: absolute;
+        bottom: calc(35vh - 26px);
+        right: 8px;
+        z-index: 21;
+        background: #1a1f2e;
+        border: 1px solid #2a3348;
+        color: #8892b0;
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: none;
+      }
+      #call.show-log #log-toggle {
+        display: block;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- LOBBY -->
+    <div id="lobby">
+      <h1>📹 Vídeo Chamada P2P</h1>
+      <p>WebRTC · Firebase · câmera frontal/traseira</p>
+      <div id="config-warn">
+        ⚠️ Preencha <code>firebaseConfig</code> no código antes de testar
+      </div>
+      <button class="btn-primary" id="createBtn" onclick="createRoom()">
+        ➕ Criar Nova Sala
+      </button>
+      <div class="divider">ou</div>
+      <div class="input-group">
+        <input
+          type="text"
+          id="roomInput"
+          placeholder="CÓDIGO"
+          maxlength="6"
+          autocomplete="off"
+        />
+        <button class="btn-primary" onclick="joinRoom()">Entrar</button>
+      </div>
+    </div>
+
+    <!-- CALL -->
+    <div id="call">
+      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="localVideo" autoplay playsinline muted></video>
+      <div id="roomBadge" onclick="copyRoomCode()">
+        <span>Sala:</span><span id="roomCode">------</span>
+      </div>
+      <div id="status">Preparando…</div>
+      <div id="controls">
+        <button class="ctrl-btn" id="micBtn" onclick="toggleMic()">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
+            />
+            <path
+              d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
+            />
+          </svg>
+        </button>
+        <button class="ctrl-btn" id="switchBtn" onclick="switchCamera()">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+            />
+          </svg>
+        </button>
+        <button class="ctrl-btn danger" onclick="hangUp()">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"
+            />
+          </svg>
+        </button>
+        <button class="ctrl-btn" onclick="toggleLog()" title="Log">
+          <svg viewBox="0 0 24 24">
+            <path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z" />
+          </svg>
+        </button>
+      </div>
+      <div id="log" class="collapsed"></div>
+      <button id="log-toggle" onclick="toggleLog()">mostrar/ocultar log</button>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        set,
+        push,
+        update,
+        onValue,
+        onChildAdded,
+        remove,
+        onDisconnect,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+      /* ═══ 1. SUA CONFIG FIREBASE ═══ */
+      const firebaseConfig = {
+        apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
+        authDomain: "trader-b13c9.firebaseapp.com",
+        databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com", // ⚠️ região pode variar
+        projectId: "trader-b13c9",
+        storageBucket: "trader-b13c9.firebasestorage.app",
+        messagingSenderId: "127165287666",
+        appId: "1:127165287666:web:9b89e35bfb3fbb0ba1546b",
+      };
+
+      /* ═══ 2. LOG VISÍVEL ═══ */
+      const logEl = () => document.getElementById("log");
+      function log(msg, cls = "l") {
+        const el = logEl();
+        if (!el) return;
+        const line = document.createElement("div");
+        line.className = cls;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        el.appendChild(line);
+        el.scrollTop = el.scrollHeight;
+        console.log(`[${cls}]`, msg);
+      }
+      window.toggleLog = () => logEl().classList.toggle("collapsed");
+
+      /* ═══ 3. FIREBASE INIT COM TRATAMENTO ═══ */
+      let db;
+      try {
+        if (firebaseConfig.apiKey.includes("SUA_")) {
+          document.getElementById("config-warn").style.display = "block";
+          log("❌ firebaseConfig não preenchido!", "err");
+        } else {
+          const app = initializeApp(firebaseConfig);
+          db = getDatabase(app);
+          log("✓ Firebase inicializado", "ok");
+        }
+      } catch (e) {
+        log("❌ Erro Firebase: " + e.message, "err");
+      }
+
+      /* ═══ 4. WEBRTC ═══ */
+      const rtcConfig = {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun.cloudflare.com:3478" },
+        ],
+      };
+
+      let pc = null,
+        localStream = null,
+        roomId = null;
+      let currentFacing = "user",
+        micEnabled = true,
+        unsubs = [];
+      let pendingCandidates = [];
+
+      async function startCamera(facing = "user") {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("getUserMedia indisponível — use HTTPS ou localhost");
+        }
+        return navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+      }
+
+      /* fila de candidatos: só adiciona quando a SDP remota estiver pronta */
+      async function addCandidate(c) {
+        if (!pc) return;
+        if (pc.remoteDescription && pc.remoteDescription.type) {
+          try {
+            await pc.addIceCandidate(c);
+            log("✓ ICE add", "ok");
+          } catch (e) {
+            log("⚠ ICE fail: " + e.message, "warn");
+          }
+        } else {
+          pendingCandidates.push(c);
+          log(`⏸ ICE na fila (${pendingCandidates.length})`, "warn");
+        }
+      }
+      async function flushCandidates() {
+        log(`▶ Liberando ${pendingCandidates.length} candidatos`, "step");
+        for (const c of pendingCandidates) {
+          try {
+            await pc.addIceCandidate(c);
+          } catch (e) {
+            log("⚠ " + e.message, "warn");
+          }
+        }
+        pendingCandidates = [];
+      }
+
+      function newPeer() {
+        pc = new RTCPeerConnection(rtcConfig);
+        pc.onicecandidate = (e) => {
+          if (e.candidate && roomId) {
+            push(
+              ref(
+                db,
+                `rooms/${roomId}/${isCaller ? "callerCandidates" : "answererCandidates"}`,
+              ),
+              e.candidate.toJSON(),
+            );
+            log("→ ICE enviado", "l");
+          }
+        };
+        pc.ontrack = (e) => {
+          log("🎥 Vídeo remoto chegou!", "ok");
+          document.getElementById("remoteVideo").srcObject = e.streams[0];
+          setStatus("Conectado ✓");
+          setTimeout(
+            () => document.getElementById("status").classList.add("hidden"),
+            2500,
+          );
+        };
+        pc.oniceconnectionstatechange = () => {
+          log(
+            "ICE state: " + pc.iceConnectionState,
+            pc.iceConnectionState === "failed" ? "err" : "l",
+          );
+          if (["connected", "completed"].includes(pc.iceConnectionState)) {
+            setStatus("Conectado ✓");
+            setTimeout(
+              () => document.getElementById("status").classList.add("hidden"),
+              2500,
+            );
+          }
+          if (pc.iceConnectionState === "failed")
+            setStatus("Falha de conexão (NAT?)");
+        };
+        return pc;
+      }
+
+      let isCaller = false;
+
+      /* ═══ 5. CALLER ═══ */
+      window.createRoom = async () => {
+        if (!db) return alert("Configure o Firebase primeiro");
+        document.getElementById("createBtn").disabled = true;
+        try {
+          isCaller = true;
+          roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+          log("Criando sala " + roomId, "step");
+
+          localStream = await startCamera(currentFacing);
+          log("✓ Câmera local ok", "ok");
+          showCall();
+
+          newPeer();
+          localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+
+          const roomRef = ref(db, `rooms/${roomId}`);
+          await set(roomRef, { createdAt: Date.now(), offer: null });
+          onDisconnect(roomRef).remove();
+          log("✓ Sala salva no Firebase", "ok");
+
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await update(roomRef, {
+            offer: { type: offer.type, sdp: offer.sdp },
+          });
+          log("✓ Offer enviada", "ok");
+          setStatus("Aguardando alguém entrar…");
+
+          unsubs.push(
+            onValue(ref(db, `rooms/${roomId}/answer`), async (snap) => {
+              const ans = snap.val();
+              if (!ans || pc.currentRemoteDescription) return;
+              log("← Answer recebida", "step");
+              await pc.setRemoteDescription(new RTCSessionDescription(ans));
+              await flushCandidates();
+              setStatus("Conectando…");
+            }),
+          );
+
+          unsubs.push(
+            onChildAdded(
+              ref(db, `rooms/${roomId}/answererCandidates`),
+              (snap) => {
+                const c = snap.val();
+                if (c) addCandidate(new RTCIceCandidate(c));
+              },
+            ),
+          );
+        } catch (e) {
+          log("❌ " + e.message, "err");
+          alert(e.message);
+          document.getElementById("createBtn").disabled = false;
+        }
+      };
+
+      /* ═══ 6. ANSWERER ═══ */
+      window.joinRoom = async () => {
+        if (!db) return alert("Configure o Firebase primeiro");
+        const code = document
+          .getElementById("roomInput")
+          .value.trim()
+          .toUpperCase();
+        if (code.length < 4) return alert("Código inválido");
+        try {
+          isCaller = false;
+          roomId = code;
+          log("Entrando na sala " + roomId, "step");
+
+          localStream = await startCamera(currentFacing);
+          log("✓ Câmera local ok", "ok");
+          showCall();
+
+          newPeer();
+          localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+
+          const roomRef = ref(db, `rooms/${roomId}`);
+
+          /* escuta a offer (aguenta se ainda não existir) */
+          unsubs.push(
+            onValue(ref(db, `rooms/${roomId}/offer`), async (snap) => {
+              const offer = snap.val();
+              if (!offer || pc.currentRemoteDescription) return;
+              log("← Offer recebida", "step");
+              await pc.setRemoteDescription(new RTCSessionDescription(offer));
+              await flushCandidates();
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              await update(roomRef, {
+                answer: { type: answer.type, sdp: answer.sdp },
+              });
+              log("✓ Answer enviada", "ok");
+              setStatus("Conectando…");
+            }),
+          );
+
+          unsubs.push(
+            onChildAdded(
+              ref(db, `rooms/${roomId}/callerCandidates`),
+              (snap) => {
+                const c = snap.val();
+                if (c) addCandidate(new RTCIceCandidate(c));
+              },
+            ),
+          );
+
+          /* avisa se a sala não existir em 5s */
+          setTimeout(async () => {
+            if (!pc.currentRemoteDescription) {
+              const snap = await onValue(
+                ref(db, `rooms/${roomId}/offer`),
+                () => {},
+                { onlyOnce: true },
+              );
+              if (!snap?.val()) {
+                setStatus("Sala não encontrada");
+                log("❌ Sala não existe (ainda)", "err");
+              }
+            }
+          }, 5000);
+        } catch (e) {
+          log("❌ " + e.message, "err");
+          alert(e.message);
+        }
+      };
+
+      /* ═══ 7. UI ═══ */
+      function showCall() {
+        document.getElementById("lobby").style.display = "none";
+        document.getElementById("call").style.display = "block";
+        document.getElementById("call").classList.add("show-log");
+        document.getElementById("localVideo").srcObject = localStream;
+        document.getElementById("roomCode").textContent = roomId;
+        document
+          .getElementById("localVideo")
+          .classList.toggle("rear", currentFacing === "environment");
+      }
+      function setStatus(m) {
+        document.getElementById("status").textContent = m;
+      }
+
+      window.toggleMic = () => {
+        if (!localStream) return;
+        const a = localStream.getAudioTracks()[0];
+        if (!a) return;
+        micEnabled = !micEnabled;
+        a.enabled = micEnabled;
+        document.getElementById("micBtn").classList.toggle("off", !micEnabled);
+      };
+
+      window.switchCamera = async () => {
+        if (!localStream) return;
+        currentFacing = currentFacing === "user" ? "environment" : "user";
+        log("Trocando câmera → " + currentFacing, "step");
+        try {
+          const s = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: currentFacing } },
+          });
+          const t = s.getVideoTracks()[0];
+          if (pc) {
+            const sender = pc
+              .getSenders()
+              .find((x) => x.track?.kind === "video");
+            if (sender) await sender.replaceTrack(t);
+          }
+          const old = localStream.getVideoTracks()[0];
+          old?.stop();
+          localStream.removeTrack(old);
+          localStream.addTrack(t);
+          document
+            .getElementById("localVideo")
+            .classList.toggle("rear", currentFacing === "environment");
+          log("✓ Câmera trocada", "ok");
+        } catch (e) {
+          log("❌ " + e.message, "err");
+        }
+      };
+
+      window.hangUp = async () => {
+        unsubs.forEach((u) => {
+          try {
+            u();
+          } catch {}
+        });
+        unsubs = [];
+        if (pc) {
+          pc.close();
+          pc = null;
+        }
+        if (localStream) {
+          localStream.getTracks().forEach((t) => t.stop());
+          localStream = null;
+        }
+        if (roomId) {
+          try {
+            await remove(ref(db, `rooms/${roomId}`));
+          } catch {}
+        }
+        pendingCandidates = [];
+        roomId = null;
+        isCaller = false;
+        document.getElementById("remoteVideo").srcObject = null;
+        document.getElementById("localVideo").srcObject = null;
+        document.getElementById("call").style.display = "none";
+        document.getElementById("lobby").style.display = "flex";
+        document.getElementById("roomInput").value = "";
+        document.getElementById("createBtn").disabled = false;
+        document.getElementById("micBtn").classList.remove("off");
+        document.getElementById("status").classList.remove("hidden");
+        logEl().innerHTML = "";
+      };
+
+      window.copyRoomCode = async () => {
+        if (!roomId) return;
+        try {
+          await navigator.clipboard.writeText(roomId);
+          alert("Copiado: " + roomId);
+        } catch {
+          alert("Código: " + roomId);
+        }
+      };
+
+      window.addEventListener("beforeunload", () => {
+        if (pc) pc.close();
+        if (localStream) localStream.getTracks().forEach((t) => t.stop());
+      });
+    </script>
+  </body>
+</html>
