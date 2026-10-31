@@ -1,756 +1,561 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1,user-scalable=no"
-    />
-    <title>Vídeo Chamada P2P</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family:
-          system-ui,
-          -apple-system,
-          sans-serif;
-        background: #0a0e1a;
-        color: #fff;
-        height: 100vh;
-        overflow: hidden;
-      }
-      #lobby {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        padding: 24px;
-        gap: 16px;
-      }
-      #lobby h1 {
-        font-size: 26px;
-        background: linear-gradient(135deg, #4f8cff, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      #lobby p {
-        color: #8892b0;
-        font-size: 13px;
-        text-align: center;
-        max-width: 340px;
-        line-height: 1.6;
-      }
-      button {
-        padding: 14px 22px;
-        border: none;
-        border-radius: 12px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        color: #fff;
-        transition: all 0.15s;
-      }
-      button:active {
-        transform: scale(0.97);
-      }
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      #goBtn {
-        background: linear-gradient(135deg, #4f8cff, #6366f1);
-        font-size: 17px;
-        padding: 20px 40px;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(79, 140, 255, 0.3);
-      }
-      #resetBtn {
-        background: transparent;
-        border: 1px solid #2a3348;
-        color: #8892b0;
-        font-size: 12px;
-        padding: 8px 14px;
-      }
-      #lobbyStatus {
-        color: #8892b0;
-        font-size: 13px;
-        text-align: center;
-        max-width: 360px;
-        min-height: 20px;
-        line-height: 1.5;
-      }
-      #cancelWait {
-        color: #4a5568;
-        font-size: 12px;
-        text-decoration: underline;
-        cursor: pointer;
-        display: none;
-      }
-      #call {
-        display: none;
-        height: 100vh;
-        position: relative;
-        background: #000;
-      }
-      #remoteVideo {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        background: #000;
-      }
-      #localVideo {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 100px;
-        height: 140px;
-        object-fit: cover;
-        border-radius: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        transform: scaleX(-1);
-        z-index: 10;
-        background: #111;
-      }
-      #localVideo.rear {
-        transform: none;
-      }
-      #status {
-        position: absolute;
-        top: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.75);
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 14px;
-        z-index: 10;
-        white-space: nowrap;
-        max-width: 90vw;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      #controls {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 12px;
-        z-index: 10;
-      }
-      .ctrl-btn {
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        cursor: pointer;
-        padding: 0;
-      }
-      .ctrl-btn svg {
-        width: 22px;
-        height: 22px;
-        fill: #fff;
-      }
-      .ctrl-btn.off {
-        background: rgba(239, 68, 68, 0.85);
-      }
-      .ctrl-btn.danger {
-        background: #ef4444;
-      }
-      #log {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        max-height: 35vh;
-        overflow-y: auto;
-        background: rgba(0, 0, 0, 0.85);
-        padding: 10px 14px;
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
-        line-height: 1.6;
-        z-index: 20;
-        border-top: 1px solid #222;
-        transition: max-height 0.2s;
-      }
-      #log.collapsed {
-        max-height: 26px;
-        overflow: hidden;
-      }
-      #log .l {
-        color: #8a93a6;
-      }
-      #log .ok {
-        color: #10b981;
-      }
-      #log .err {
-        color: #f87171;
-      }
-      #log .warn {
-        color: #fbbf24;
-      }
-      #log .step {
-        color: #60a5fa;
-        font-weight: 600;
-      }
-      .hidden {
-        display: none !important;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="lobby">
-      <h1>📹 Vídeo Chamada P2P</h1>
-      <p>
-        Aperte o botão. Conexão automática entre duas pessoas — abra em dois
-        aparelhos e aperte nos dois.
-      </p>
-      <button id="goBtn" onclick="go()">📞 Entrar na Chamada</button>
-      <div id="lobbyStatus"></div>
-      <span id="cancelWait" onclick="cancelWait()">cancelar espera</span>
-      <button id="resetBtn" onclick="resetRoom()">
-        🧹 Limpar sala (use se travar)
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <title>Vídeo Chamada P2P — Dual Camera</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: system-ui,-apple-system,sans-serif; background:#0a0e1a; color:#fff; height:100vh; overflow:hidden; }
+
+    /* ── LOBBY ─────────────────────────────────────── */
+    #lobby { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; padding:24px; gap:16px; }
+    #lobby h1 { font-size:26px; background:linear-gradient(135deg,#4f8cff,#a855f7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    #lobby p { color:#8892b0; font-size:13px; text-align:center; max-width:360px; line-height:1.6; }
+    button { padding:14px 22px; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; color:#fff; transition:all .15s; }
+    button:active { transform:scale(.97); }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    #goBtn { background:linear-gradient(135deg,#4f8cff,#6366f1); font-size:17px; padding:20px 40px; border-radius:16px; box-shadow:0 8px 24px rgba(79,140,255,.3); }
+    #resetBtn { background:transparent; border:1px solid #2a3348; color:#8892b0; font-size:12px; padding:8px 14px; }
+    #lobbyStatus { color:#8892b0; font-size:13px; text-align:center; max-width:360px; min-height:20px; line-height:1.5; }
+    #cancelWait { color:#4a5568; font-size:12px; text-decoration:underline; cursor:pointer; display:none; }
+
+    /* ── CHAMADA ───────────────────────────────────── */
+    #call { display:none; height:100vh; position:relative; background:#000; }
+
+    /* vídeo principal (peer / preview da câmera enviada) */
+    #remoteVideo { width:100%; height:100%; object-fit:cover; background:#000; }
+
+    /* PiP frontal — auto-monitor (espelhado) */
+    #localVideo {
+      position:absolute; top:16px; right:16px;
+      width:100px; height:140px; object-fit:cover;
+      border-radius:14px; border:2px solid rgba(255,255,255,.2);
+      transform:scaleX(-1); z-index:10; background:#111;
+    }
+
+    /* PiP do que está sendo enviado + selo */
+    #sendingPip {
+      position:absolute; top:16px; left:16px;
+      width:88px; z-index:10;
+    }
+    #sendingVideo {
+      width:88px; height:120px; object-fit:cover; display:block;
+      border-radius:12px; border:2px solid rgba(239,68,68,.7);
+      background:#111;
+    }
+    #sendingBadge {
+      display:block; margin-top:4px; background:#ef4444; color:#fff;
+      font-size:9px; font-weight:700; padding:2px 0; border-radius:4px;
+      text-align:center; letter-spacing:.4px;
+    }
+    #sendingVideo.mirror { transform:scaleX(-1); }
+
+    /* status + controles */
+    #status {
+      position:absolute; top:24px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,.75); padding:10px 20px; border-radius:20px;
+      font-size:14px; z-index:10; white-space:nowrap; max-width:90vw;
+      overflow:hidden; text-overflow:ellipsis;
+    }
+    #controls {
+      position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+      display:flex; gap:12px; z-index:10;
+    }
+    .ctrl-btn {
+      width:54px; height:54px; border-radius:50%; display:flex;
+      align-items:center; justify-content:center;
+      background:rgba(255,255,255,.15); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.1); cursor:pointer; padding:0;
+    }
+    .ctrl-btn svg { width:22px; height:22px; fill:#fff; }
+    .ctrl-btn.off { background:rgba(239,68,68,.85); }
+    .ctrl-btn.danger { background:#ef4444; }
+    .ctrl-btn[disabled] { opacity:.35; }
+
+    /* log */
+    #log {
+      position:absolute; bottom:0; left:0; right:0; max-height:35vh;
+      overflow-y:auto; background:rgba(0,0,0,.85); padding:10px 14px;
+      font-family:ui-monospace,monospace; font-size:11px; line-height:1.6;
+      z-index:20; border-top:1px solid #222; transition:max-height .2s;
+    }
+    #log.collapsed { max-height:26px; overflow:hidden; }
+    #log .l    { color:#8a93a6; }
+    #log .ok   { color:#10b981; }
+    #log .err  { color:#f87171; }
+    #log .warn { color:#fbbf24; }
+    #log .step { color:#60a5fa; font-weight:600; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+  <!-- ── LOBBY ─────────────────────────────────────── -->
+  <div id="lobby">
+    <h1>📹 Vídeo Chamada P2P</h1>
+    <p>Duas câmeras: a <b>traseira</b> é enviada, a <b>frontal</b> te mostra em PiP. Aperte nos dois aparelhos.</p>
+    <button id="goBtn" onclick="go()">📞 Entrar na Chamada</button>
+    <div id="lobbyStatus"></div>
+    <span id="cancelWait" onclick="cancelWait()">cancelar espera</span>
+    <button id="resetBtn" onclick="resetRoom()">🧹 Limpar sala</button>
+  </div>
+
+  <!-- ── CHAMADA ───────────────────────────────────── -->
+  <div id="call">
+    <video id="remoteVideo" autoplay playsinline></video>
+
+    <!-- PiP: prévia do que está sendo ENVIADO ao outro -->
+    <div id="sendingPip">
+      <video id="sendingVideo" autoplay playsinline muted></video>
+      <span id="sendingBadge">📤 Traseira</span>
+    </div>
+
+    <!-- PiP: auto-monitor (frontal, espelhado) -->
+    <video id="localVideo" autoplay playsinline muted></video>
+
+    <div id="status">Preparando…</div>
+
+    <div id="controls">
+      <button class="ctrl-btn" id="micBtn" onclick="toggleMic()" title="Microfone">
+        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="switchBtn" onclick="switchCamera()" title="Trocar câmera enviada">
+        <svg viewBox="0 0 24 24"><path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+      </button>
+      <button class="ctrl-btn danger" onclick="hangUp()" title="Encerrar">
+        <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+      </button>
+      <button class="ctrl-btn" onclick="toggleLog()" title="Log">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z"/></svg>
       </button>
     </div>
 
-    <div id="call">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <video id="localVideo" autoplay playsinline muted></video>
-      <div id="status">Preparando…</div>
-      <div id="controls">
-        <button class="ctrl-btn" id="micBtn" onclick="toggleMic()">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
-            />
-            <path
-              d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn" id="switchBtn" onclick="switchCamera()">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn danger" onclick="hangUp()" title="Encerrar">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn" onclick="toggleLog()" title="Log">
-          <svg viewBox="0 0 24 24">
-            <path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z" />
-          </svg>
-        </button>
-      </div>
-      <div id="log" class="collapsed"></div>
-    </div>
+    <div id="log" class="collapsed"></div>
+  </div>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import {
-        getDatabase,
-        ref,
-        set,
-        push,
-        update,
-        onValue,
-        onChildAdded,
-        remove,
-        onDisconnect,
-        get,
-        runTransaction,
-      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getDatabase, ref, set, push, update, onValue, onChildAdded,
+      remove, onDisconnect, get, runTransaction,
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
-        authDomain: "trader-b13c9.firebaseapp.com",
-        databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com",
-        projectId: "trader-b13c9",
-        storageBucket: "trader-b13c9.firebasestorage.app",
-        messagingSenderId: "127165287666",
-        appId: "1:127165287666:web:9b89e35bfb3fbb0ba1546b",
-      };
+    const firebaseConfig = {
+      apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
+      authDomain: "trader-b13c9.firebaseapp.com",
+      databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com",
+      projectId: "trader-b13c9",
+      storageBucket: "trader-b13c9.firebasestorage.app",
+      messagingSenderId: "127165287666",
+      appId: "1:127165287666:web:9b89e35bfb3fbb0ba1546b",
+    };
 
-      let db = null;
+    let db = null;
+    try { db = getDatabase(initializeApp(firebaseConfig)); }
+    catch (e) { console.error("Firebase:", e); }
+
+    const ROOM = "principal";
+    const STALE_MS = 90 * 1000;
+
+    const rtcConfig = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" },
+        // TURN necessário entre redes diferentes. Adicione um TURN real:
+        // { urls:"turn:SEU_TURN:3478", username:"...", credential:"..." }
+      ],
+    };
+
+    /* ── ESTADO ──────────────────────────────────── */
+    let frontStream = null;    // câmera frontal (auto-monitor)
+    let rearStream  = null;    // câmera traseira (principal)
+    let audioStream = null;    // microfone (track compartilhado)
+    let sendingIsRear = true;  // qual câmera está sendo enviada
+    let micEnabled = true;
+
+    let pc = null;
+    let unsubs = [];
+    let pendingCandidates = [];
+    let isCaller = false;
+    let hangingUp = false;
+    let answererSeen = false, callerSeen = false;
+    let roomRef = null;
+    let waitTimer = null;
+
+    const $ = (id) => document.getElementById(id);
+    const log = (msg, cls = "l") => {
+      const el = $("log");
+      if (el) {
+        const line = document.createElement("div");
+        line.className = cls;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        el.appendChild(line); el.scrollTop = el.scrollHeight;
+      }
+      console.log(`[${cls}]`, msg);
+    };
+    window.toggleLog = () => $("log").classList.toggle("collapsed");
+    const setLobbyStatus = (t) => { $("lobbyStatus").textContent = t || ""; };
+    const setStatus = (t) => { $("status").textContent = t; $("status").classList.remove("hidden"); };
+    const markConnected = () => {
+      setStatus("Conectado ✓");
+      setTimeout(() => { if ($("status").textContent === "Conectado ✓") $("status").classList.add("hidden"); }, 2500);
+    };
+
+    /* ── CÂMERAS ─────────────────────────────────── */
+    async function startCameras() {
+      if (!navigator.mediaDevices?.getUserMedia)
+        throw new Error("Câmera indisponível — use HTTPS ou localhost");
+
+      // FRONTAL (vídeo puro, será o auto-monitor)
       try {
-        db = getDatabase(initializeApp(firebaseConfig));
-        console.log("[ok] Firebase inicializado");
-      } catch (e) {
-        console.error("[err] Firebase:", e);
-        document.addEventListener("DOMContentLoaded", () => {
-          const s = document.getElementById("lobbyStatus");
-          if (s) s.textContent = "❌ Erro ao iniciar Firebase: " + e.message;
+        frontStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
         });
-      }
+        log("✓ Frontal OK", "ok");
+      } catch (e) { log("⚠ Frontal falhou: " + e.name, "warn"); }
 
-      const ROOM = "principal";
-      const STALE_MS = 90 * 1000; // 90s sem resposta = expira
+      // TRASEIRA (vídeo puro, será o principal)
+      try {
+        rearStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        log("✓ Traseira OK", "ok");
+      } catch (e) { log("⚠ Traseira falhou: " + e.name, "warn"); }
 
-      const rtcConfig = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun.cloudflare.com:3478" },
-          // TURN necessário entre redes diferentes. openrelay.metered.ca está FORA DO AR.
-          // Coloque um TURN real (Metered, Twilio, coturn) aqui:
-          // { urls: "turn:SEU_TURN:3478", username: "...", credential: "..." },
-        ],
-      };
+      // MICROFONE (uma vez só)
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        log("✓ Microfone OK", "ok");
+      } catch (e) { log("⚠ Microfone falhou: " + e.name, "warn"); }
 
-      let pc = null,
-        localStream = null,
-        currentFacing = "user",
-        micEnabled = true;
-      let unsubs = [],
-        pendingCandidates = [],
-        isCaller = false;
-      let hangingUp = false,
-        answererSeen = false,
-        callerSeen = false;
-      let roomRef = null,
-        waitTimer = null;
-
-      const $ = (id) => document.getElementById(id);
-      const log = (msg, cls = "l") => {
-        const el = $("log");
-        if (el) {
-          const line = document.createElement("div");
-          line.className = cls;
-          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-          el.appendChild(line);
-          el.scrollTop = el.scrollHeight;
-        }
-        console.log(`[${cls}]`, msg);
-      };
-      window.toggleLog = () => $("log").classList.toggle("collapsed");
-      const setLobbyStatus = (t) => {
-        $("lobbyStatus").textContent = t || "";
-      };
-      const setStatus = (t) => {
-        $("status").textContent = t;
-        $("status").classList.remove("hidden");
-      };
-      const markConnected = () => {
-        setStatus("Conectado ✓");
-        setTimeout(() => {
-          if ($("status").textContent === "Conectado ✓")
-            $("status").classList.add("hidden");
-        }, 2500);
-      };
-
-      async function startCamera(facing = "user") {
-        if (!navigator.mediaDevices?.getUserMedia)
-          throw new Error("getUserMedia indisponível — use HTTPS ou localhost");
+      // Fallback: pelo menos uma câmera
+      if (!frontStream && !rearStream) {
         try {
-          return await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: facing },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-            audio: { echoCancellation: true, noiseSuppression: true },
-          });
-        } catch (e1) {
-          log(
-            `⚠ facingMode falhou (${e1.name}), tentando câmera padrão`,
-            "warn",
-          );
-          try {
-            return await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: true,
-            });
-          } catch (e2) {
-            if (e2.name === "NotFoundError")
-              throw new Error(
-                "Nenhuma câmera/microfone encontrado neste aparelho.",
-              );
-            if (e2.name === "NotAllowedError")
-              throw new Error(
-                "Permissão negada. Toque no cadeado da barra e libere câmera/microfone.",
-              );
-            if (e2.name === "NotReadableError")
-              throw new Error(
-                "Câmera em uso por outro app ou outra aba. Feche-o e tente de novo.",
-              );
-            throw new Error(e2.name + ": " + e2.message);
-          }
+          const any = await navigator.mediaDevices.getUserMedia({ video: true });
+          frontStream = rearStream = any;
+          log("⚠ Câmera única (fallback)", "warn");
+        } catch (e) {
+          if (e.name === "NotFoundError") throw new Error("Nenhuma câmera encontrada.");
+          if (e.name === "NotAllowedError") throw new Error("Permissão negada. Libere câmera/microfone no cadeado.");
+          if (e.name === "NotReadableError") throw new Error("Câmera em uso por outro app/aba.");
+          throw new Error(e.name + ": " + e.message);
         }
       }
+      if (!frontStream) frontStream = rearStream;
+      if (!rearStream) rearStream = frontStream;
 
-      async function addCandidate(c) {
+      // Ajustes de UI
+      const dual = frontStream !== rearStream;
+      if (!dual) {
+        $("sendingPip").classList.add("hidden");
+        $("switchBtn").disabled = true;
+        $("switchBtn").style.opacity = ".35";
+        log("ℹ Apenas uma câmera disponível", "l");
+      }
+    }
+
+    /* ── WEBRTC ──────────────────────────────────── */
+    async function addCandidate(c) {
+      if (!pc) return;
+      if (pc.remoteDescription?.type) {
+        try { await pc.addIceCandidate(c); } catch (e) { log("⚠ ICE: " + e.message, "warn"); }
+      } else {
+        pendingCandidates.push(c);
+      }
+    }
+    async function flushCandidates() {
+      if (!pc) return;
+      for (const c of pendingCandidates) { try { await pc.addIceCandidate(c); } catch {} }
+      pendingCandidates = [];
+    }
+
+    function newPeer() {
+      pc = new RTCPeerConnection(rtcConfig);
+      pc.onicecandidate = (e) => {
+        if (e.candidate && roomRef) {
+          const path = isCaller ? "callerCandidates" : "answererCandidates";
+          push(ref(db, `rooms/${ROOM}/${path}`), e.candidate.toJSON());
+        }
+      };
+      pc.ontrack = (e) => {
+        log("🎥 Vídeo remoto chegou!", "ok");
+        const rv = $("remoteVideo");
+        rv.srcObject = e.streams[0];
+        rv.muted = false;
+        rv.play().catch(() => {
+          log("⚠ Autoplay bloqueado — toque na tela", "warn");
+          document.body.addEventListener("click", () => rv.play().catch(() => {}), { once: true });
+        });
+        markConnected();
+      };
+      pc.oniceconnectionstatechange = () => {
         if (!pc) return;
-        if (pc.remoteDescription?.type) {
-          try {
-            await pc.addIceCandidate(c);
-          } catch (e) {
-            log("⚠ ICE: " + e.message, "warn");
-          }
+        const st = pc.iceConnectionState;
+        log("ICE: " + st, st === "failed" ? "err" : "l");
+        if (st === "connected" || st === "completed") markConnected();
+        if (st === "failed") setStatus("Falha — TURN necessário (redes diferentes)");
+      };
+    }
+
+    function addSendingTracks() {
+      const sending = sendingIsRear ? rearStream : frontStream;
+      if (sending) sending.getVideoTracks().forEach((t) => pc.addTrack(t, sending));
+      if (audioStream) audioStream.getAudioTracks().forEach((t) => pc.addTrack(t, audioStream));
+    }
+
+    /* ── VIEWS ───────────────────────────────────── */
+    function updateVideos() {
+      // PiP frontal (auto-monitor, sempre espelhado)
+      const lv = $("localVideo");
+      if (frontStream && lv.srcObject !== frontStream) lv.srcObject = frontStream;
+
+      // PiP do que está sendo enviado
+      const sv = $("sendingVideo");
+      const active = sendingIsRear ? rearStream : frontStream;
+      if (active && sv.srcObject !== active) sv.srcObject = active;
+      sv.classList.toggle("mirror", !sendingIsRear);
+      $("sendingBadge").textContent = sendingIsRear ? "📤 Traseira" : "📤 Frontal";
+    }
+
+    function showCall() {
+      $("lobby").style.display = "none";
+      $("call").style.display = "block";
+      // Main preview: câmera enviada (o peer substituirá isto quando conectar)
+      const rv = $("remoteVideo");
+      const sending = sendingIsRear ? rearStream : frontStream;
+      if (sending) { rv.srcObject = sending; rv.muted = true; }
+      updateVideos();
+    }
+
+    function cleanupLocal() {
+      unsubs.forEach((u) => { try { u(); } catch {} });
+      unsubs = [];
+      if (pc) { try { pc.close(); } catch {} pc = null; }
+      const seen = new Set();
+      [frontStream, rearStream, audioStream].forEach((s) => {
+        if (!s) return;
+        s.getTracks().forEach((t) => {
+          if (seen.has(t.id)) return;
+          seen.add(t.id);
+          try { t.stop(); } catch {}
+        });
+      });
+      frontStream = rearStream = audioStream = null;
+      pendingCandidates = [];
+      answererSeen = false; callerSeen = false; isCaller = false;
+      roomRef = null;
+    }
+
+    /* ── ENTRADA ─────────────────────────────────── */
+    window.go = async () => {
+      if (!db) return alert("Firebase não inicializado");
+      if (hangingUp) return;
+      $("goBtn").disabled = true;
+      $("cancelWait").style.display = "none";
+      try {
+        roomRef = ref(db, `rooms/${ROOM}`);
+        const data = (await get(roomRef)).val();
+        const now = Date.now();
+        const hasOffer = !!data?.offer;
+        const hasAnswer = !!data?.answer;
+        const stale = !data || (now - (data.createdAt || 0) > STALE_MS);
+        log(`Sala: offer=${hasOffer} answer=${hasAnswer} stale=${stale}`, "l");
+
+        // sala ocupada → aguarda
+        if (hasOffer && hasAnswer && !stale) {
+          setLobbyStatus("Sala ocupada — aguardando o outro sair…");
+          $("cancelWait").style.display = "inline";
+          clearTimeout(waitTimer);
+          waitTimer = setTimeout(() => { $("goBtn").disabled = false; go(); }, 3000);
+          return;
+        }
+
+        // prepara câmeras
+        if (!frontStream && !rearStream) {
+          setLobbyStatus("Preparando câmeras…");
+          try { await startCameras(); }
+          catch (e) { log("❌ " + e.message, "err"); setLobbyStatus("❌ " + e.message); $("goBtn").disabled = false; return; }
+        }
+        showCall();
+
+        if (hasOffer && !hasAnswer && !stale) {
+          log("→ Entrando como atendedor", "step");
+          await startAnswerer(data.offer);
         } else {
-          pendingCandidates.push(c);
-        }
-      }
-      async function flushCandidates() {
-        if (!pc) return;
-        for (const c of pendingCandidates) {
-          try {
-            await pc.addIceCandidate(c);
-          } catch {}
-        }
-        pendingCandidates = [];
-      }
-
-      function newPeer() {
-        pc = new RTCPeerConnection(rtcConfig);
-        pc.onicecandidate = (e) => {
-          if (e.candidate && roomRef) {
-            const path = isCaller ? "callerCandidates" : "answererCandidates";
-            push(ref(db, `rooms/${ROOM}/${path}`), e.candidate.toJSON());
-          }
-        };
-        pc.ontrack = (e) => {
-          log("🎥 Vídeo remoto chegou!", "ok");
-          const rv = $("remoteVideo");
-          rv.srcObject = e.streams[0];
-          rv.play().catch(() => {
-            log("⚠ Autoplay bloqueado — toque na tela", "warn");
-            document.body.addEventListener(
-              "click",
-              () => rv.play().catch(() => {}),
-              { once: true },
-            );
-          });
-          markConnected();
-        };
-        pc.oniceconnectionstatechange = () => {
-          if (!pc) return;
-          const st = pc.iceConnectionState;
-          log("ICE: " + st, st === "failed" ? "err" : "l");
-          if (st === "connected" || st === "completed") markConnected();
-          if (st === "failed")
-            setStatus("Falha — TURN necessário (redes diferentes)");
-        };
-      }
-
-      function showCall() {
-        $("lobby").style.display = "none";
-        $("call").style.display = "block";
-        $("localVideo").srcObject = localStream;
-        $("localVideo").classList.toggle(
-          "rear",
-          currentFacing === "environment",
-        );
-      }
-
-      function cleanupLocal() {
-        unsubs.forEach((u) => {
-          try {
-            u();
-          } catch {}
-        });
-        unsubs = [];
-        if (pc) {
-          try {
-            pc.close();
-          } catch {}
-          pc = null;
-        }
-        if (localStream) {
-          localStream.getTracks().forEach((t) => {
-            try {
-              t.stop();
-            } catch {}
-          });
-          localStream = null;
-        }
-        pendingCandidates = [];
-        answererSeen = false;
-        callerSeen = false;
-        isCaller = false;
-        roomRef = null;
-      }
-
-      // ── ENTRADA (1 botão decide papel) ─────────────────────
-      window.go = async () => {
-        if (!db) return alert("Firebase não inicializado");
-        if (hangingUp) return;
-        $("goBtn").disabled = true;
-        $("cancelWait").style.display = "none";
-        try {
-          roomRef = ref(db, `rooms/${ROOM}`);
-          const data = (await get(roomRef)).val();
-          const now = Date.now();
-          const hasOffer = !!data?.offer;
-          const hasAnswer = !!data?.answer;
-          const stale = !data || now - (data.createdAt || 0) > STALE_MS;
-          log(
-            `Sala: offer=${hasOffer} answer=${hasAnswer} stale=${stale}`,
-            "l",
-          );
-
-          // 1. chamada ativa → espera
-          if (hasOffer && hasAnswer && !stale) {
-            setLobbyStatus("Sala ocupada — aguardando o outro sair…");
-            $("cancelWait").style.display = "inline";
-            clearTimeout(waitTimer);
-            waitTimer = setTimeout(() => {
-              $("goBtn").disabled = false;
-              go();
-            }, 3000);
-            return;
-          }
-
-          // 2. alguém esperando → vira atendedor
-          if (hasOffer && !hasAnswer && !stale) {
-            if (!localStream) {
-              setLobbyStatus("Preparando câmera…");
-              localStream = await startCamera(currentFacing);
-            }
-            showCall();
-            log("→ Entrando como atendedor", "step");
-            await startAnswerer(data.offer);
-            return;
-          }
-
-          // 3. sala livre/stale → vira chamador
-          if (!localStream) {
-            setLobbyStatus("Preparando câmera…");
-            localStream = await startCamera(currentFacing);
-          }
-          showCall();
           log("→ Entrando como chamador", "step");
           await tryBecomeCaller();
-        } catch (e) {
-          log("❌ " + e.message, "err");
-          setLobbyStatus("❌ " + e.message);
-          $("goBtn").disabled = false;
         }
-      };
-
-      window.cancelWait = () => {
-        clearTimeout(waitTimer);
-        $("cancelWait").style.display = "none";
-        setLobbyStatus("");
+      } catch (e) {
+        log("❌ " + e.message, "err");
+        setLobbyStatus("❌ " + e.message);
         $("goBtn").disabled = false;
-      };
-
-      window.resetRoom = async () => {
-        if (!confirm("Apagar a sala? Todos serão desconectados.")) return;
-        try {
-          await remove(ref(db, `rooms/${ROOM}`));
-          log("✓ Sala limpa", "ok");
-          setLobbyStatus("Sala limpa. Aperte Entrar de novo.");
-        } catch (e) {
-          alert(e.message);
-        }
-      };
-
-      // ── CHAMADOR ──────────────────────────────────────────
-      async function tryBecomeCaller() {
-        isCaller = true;
-        newPeer();
-        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-        const offer = await pc.createOffer();
-        const offerObj = { type: offer.type, sdp: offer.sdp };
-
-        const tx = await runTransaction(roomRef, (cur) => {
-          const cStale = !cur || Date.now() - (cur.createdAt || 0) > STALE_MS;
-          if (cur?.offer && cur?.answer) return; // chamada ativa → aborta
-          if (cur?.offer && !cStale) return; // alguém esperando → aborta
-          return { createdAt: Date.now(), offer: offerObj };
-        });
-        if (!tx.committed) {
-          log("⚠ Alguém chegou primeiro, reavaliando…", "warn");
-          if (pc) {
-            try {
-              pc.close();
-            } catch {}
-            pc = null;
-          }
-          isCaller = false;
-          return go();
-        }
-        log("✓ Sala reservada com offer", "ok");
-
-        const callerRef = ref(db, `rooms/${ROOM}/caller`);
-        await set(callerRef, true);
-        onDisconnect(callerRef).remove();
-
-        await pc.setLocalDescription(offer);
-        setStatus("Aguardando alguém entrar…");
-
-        unsubs.push(
-          onValue(ref(db, `rooms/${ROOM}/answer`), async (snap) => {
-            const ans = snap.val();
-            if (!ans || !pc || pc.currentRemoteDescription) return;
-            log("← Answer recebida", "step");
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(ans));
-              await flushCandidates();
-              setStatus("Conectando…");
-            } catch (e) {
-              log("❌ setRemoteDescription: " + e.message, "err");
-            }
-          }),
-        );
-
-        unsubs.push(
-          onChildAdded(ref(db, `rooms/${ROOM}/answererCandidates`), (snap) => {
-            const c = snap.val();
-            if (c) addCandidate(new RTCIceCandidate(c));
-          }),
-        );
-
-        unsubs.push(
-          onValue(ref(db, `rooms/${ROOM}/answerer`), (snap) => {
-            if (snap.val()) answererSeen = true;
-            else if (answererSeen && pc && !hangingUp) {
-              log("⚠ O outro lado saiu", "warn");
-              hangUp();
-            }
-          }),
-        );
       }
+    };
 
-      // ── ATENDEDOR ─────────────────────────────────────────
-      async function startAnswerer(offerData) {
-        isCaller = false;
-        newPeer();
-        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+    window.cancelWait = () => {
+      clearTimeout(waitTimer);
+      $("cancelWait").style.display = "none";
+      setLobbyStatus("");
+      $("goBtn").disabled = false;
+    };
 
-        const presenceRef = ref(db, `rooms/${ROOM}/answerer`);
-        await set(presenceRef, true);
-        onDisconnect(presenceRef).remove();
+    window.resetRoom = async () => {
+      if (!confirm("Apagar a sala? Todos serão desconectados.")) return;
+      try { await remove(ref(db, `rooms/${ROOM}`)); log("✓ Sala limpa", "ok"); setLobbyStatus("Sala limpa."); }
+      catch (e) { alert(e.message); }
+    };
 
-        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-        await flushCandidates();
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await update(roomRef, {
-          answer: { type: answer.type, sdp: answer.sdp },
-        });
-        log("✓ Answer enviada", "ok");
-        setStatus("Conectando…");
+    /* ── CALLER ──────────────────────────────────── */
+    async function tryBecomeCaller() {
+      isCaller = true;
+      newPeer();
+      addSendingTracks();
+      const offer = await pc.createOffer();
+      const offerObj = { type: offer.type, sdp: offer.sdp };
 
-        unsubs.push(
-          onChildAdded(ref(db, `rooms/${ROOM}/callerCandidates`), (snap) => {
-            const c = snap.val();
-            if (c) addCandidate(new RTCIceCandidate(c));
-          }),
-        );
-
-        unsubs.push(
-          onValue(ref(db, `rooms/${ROOM}/caller`), (snap) => {
-            if (snap.val()) callerSeen = true;
-            else if (callerSeen && !hangingUp) {
-              log("⚠ O chamador saiu", "warn");
-              hangUp();
-            }
-          }),
-        );
-      }
-
-      // ── CONTROLES ─────────────────────────────────────────
-      window.toggleMic = () => {
-        if (!localStream) return;
-        const a = localStream.getAudioTracks()[0];
-        if (!a) return;
-        micEnabled = !micEnabled;
-        a.enabled = micEnabled;
-        $("micBtn").classList.toggle("off", !micEnabled);
-      };
-
-      window.switchCamera = async () => {
-        if (!localStream) return;
-        currentFacing = currentFacing === "user" ? "environment" : "user";
-        try {
-          let s;
-          try {
-            s = await navigator.mediaDevices.getUserMedia({
-              video: { facingMode: { exact: currentFacing } },
-            });
-          } catch {
-            s = await navigator.mediaDevices.getUserMedia({ video: true });
-          }
-          const t = s.getVideoTracks()[0];
-          if (pc) {
-            const sender = pc
-              .getSenders()
-              .find((x) => x.track?.kind === "video");
-            if (sender) await sender.replaceTrack(t);
-          }
-          const old = localStream.getVideoTracks()[0];
-          if (old) {
-            old.stop();
-            localStream.removeTrack(old);
-          }
-          localStream.addTrack(t);
-          $("localVideo").srcObject = localStream;
-          $("localVideo").classList.toggle(
-            "rear",
-            currentFacing === "environment",
-          );
-        } catch (e) {
-          log("❌ " + e.message, "err");
-        }
-      };
-
-      window.hangUp = async () => {
-        if (hangingUp) return;
-        hangingUp = true;
-        clearTimeout(waitTimer);
-
-        const wasCaller = isCaller,
-          wasRoom = roomRef;
-        cleanupLocal();
-
-        if (wasRoom && db) {
-          try {
-            if (wasCaller) await remove(wasRoom);
-            else {
-              await remove(ref(db, `rooms/${ROOM}/answerer`));
-              await update(wasRoom, { answer: null }).catch(() => {});
-            }
-          } catch {}
-        }
-
-        $("remoteVideo").srcObject = null;
-        $("localVideo").srcObject = null;
-        $("call").style.display = "none";
-        $("lobby").style.display = "flex";
-        $("goBtn").disabled = false;
-        $("micBtn").classList.remove("off");
-        $("status").classList.add("hidden");
-        $("cancelWait").style.display = "none";
-        setLobbyStatus("");
-        micEnabled = true;
-        $("log").innerHTML = "";
-        hangingUp = false;
-      };
-
-      window.addEventListener("beforeunload", () => {
-        try {
-          if (pc) pc.close();
-        } catch {}
-        if (localStream) localStream.getTracks().forEach((t) => t.stop());
+      const tx = await runTransaction(roomRef, (cur) => {
+        const cStale = !cur || (Date.now() - (cur.createdAt || 0) > STALE_MS);
+        if (cur?.offer && cur?.answer) return;
+        if (cur?.offer && !cStale) return;
+        return { createdAt: Date.now(), offer: offerObj };
       });
-    </script>
-  </body>
+      if (!tx.committed) {
+        log("⚠ Alguém chegou primeiro, reavaliando…", "warn");
+        if (pc) { try { pc.close(); } catch {} pc = null; }
+        isCaller = false;
+        return go();
+      }
+      log("✓ Sala reservada com offer", "ok");
+
+      const callerRef = ref(db, `rooms/${ROOM}/caller`);
+      await set(callerRef, true);
+      onDisconnect(callerRef).remove();
+
+      await pc.setLocalDescription(offer);
+      setStatus("Aguardando alguém entrar…");
+
+      unsubs.push(onValue(ref(db, `rooms/${ROOM}/answer`), async (snap) => {
+        const ans = snap.val();
+        if (!ans || !pc || pc.currentRemoteDescription) return;
+        log("← Answer recebida", "step");
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(ans));
+          await flushCandidates();
+          setStatus("Conectando…");
+        } catch (e) { log("❌ setRemoteDescription: " + e.message, "err"); }
+      }));
+      unsubs.push(onChildAdded(ref(db, `rooms/${ROOM}/answererCandidates`), (snap) => {
+        const c = snap.val(); if (c) addCandidate(new RTCIceCandidate(c));
+      }));
+      unsubs.push(onValue(ref(db, `rooms/${ROOM}/answerer`), (snap) => {
+        if (snap.val()) answererSeen = true;
+        else if (answererSeen && pc && !hangingUp) { log("⚠ O outro lado saiu", "warn"); hangUp(); }
+      }));
+    }
+
+    /* ── ANSWERER ────────────────────────────────── */
+    async function startAnswerer(offerData) {
+      isCaller = false;
+      newPeer();
+      addSendingTracks();
+
+      const presenceRef = ref(db, `rooms/${ROOM}/answerer`);
+      await set(presenceRef, true);
+      onDisconnect(presenceRef).remove();
+
+      await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+      await flushCandidates();
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await update(roomRef, { answer: { type: answer.type, sdp: answer.sdp } });
+      log("✓ Answer enviada", "ok");
+      setStatus("Conectando…");
+
+      unsubs.push(onChildAdded(ref(db, `rooms/${ROOM}/callerCandidates`), (snap) => {
+        const c = snap.val(); if (c) addCandidate(new RTCIceCandidate(c));
+      }));
+      unsubs.push(onValue(ref(db, `rooms/${ROOM}/caller`), (snap) => {
+        if (snap.val()) callerSeen = true;
+        else if (callerSeen && !hangingUp) { log("⚠ O chamador saiu", "warn"); hangUp(); }
+      }));
+    }
+
+    /* ── CONTROLES ───────────────────────────────── */
+    window.toggleMic = () => {
+      if (!audioStream) return;
+      const a = audioStream.getAudioTracks()[0]; if (!a) return;
+      micEnabled = !micEnabled; a.enabled = micEnabled;
+      $("micBtn").classList.toggle("off", !micEnabled);
+      log(micEnabled ? "🎤 Microfone ligado" : "🔇 Microfone desligado", "l");
+    };
+
+    window.switchCamera = async () => {
+      if (frontStream === rearStream) { log("⚠ Apenas uma câmera", "warn"); return; }
+      sendingIsRear = !sendingIsRear;
+      const newStream = sendingIsRear ? rearStream : frontStream;
+      const newTrack = newStream.getVideoTracks()[0];
+      if (pc && newTrack) {
+        const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+        if (sender) { try { await sender.replaceTrack(newTrack); } catch (e) { log("⚠ replaceTrack: " + e.message, "warn"); } }
+      }
+      updateVideos();
+      log("Câmera enviada: " + (sendingIsRear ? "traseira" : "frontal"), "ok");
+    };
+
+    window.hangUp = async () => {
+      if (hangingUp) return;
+      hangingUp = true;
+      clearTimeout(waitTimer);
+
+      const wasCaller = isCaller, wasRoom = roomRef;
+      cleanupLocal();
+
+      if (wasRoom && db) {
+        try {
+          if (wasCaller) await remove(wasRoom);
+          else {
+            await remove(ref(db, `rooms/${ROOM}/answerer`));
+            await update(wasRoom, { answer: null }).catch(() => {});
+          }
+        } catch {}
+      }
+
+      $("remoteVideo").srcObject = null;
+      $("localVideo").srcObject = null;
+      $("sendingVideo").srcObject = null;
+      $("call").style.display = "none";
+      $("lobby").style.display = "flex";
+      $("goBtn").disabled = false;
+      $("micBtn").classList.remove("off");
+      $("switchBtn").disabled = false;
+      $("switchBtn").style.opacity = "1";
+      $("sendingPip").classList.remove("hidden");
+      $("status").classList.add("hidden");
+      $("cancelWait").style.display = "none";
+      setLobbyStatus("");
+      micEnabled = true;
+      sendingIsRear = true;
+      $("log").innerHTML = "";
+      hangingUp = false;
+    };
+
+    window.addEventListener("beforeunload", () => {
+      try { if (pc) pc.close(); } catch {}
+      const seen = new Set();
+      [frontStream, rearStream, audioStream].forEach((s) => {
+        if (!s) return;
+        s.getTracks().forEach((t) => {
+          if (seen.has(t.id)) return;
+          seen.add(t.id);
+          try { t.stop(); } catch {}
+        });
+      });
+    });
+  </script>
+</body>
 </html>
