@@ -43,31 +43,8 @@
         color: #8892b0;
         font-size: 13px;
         text-align: center;
-        max-width: 320px;
-        line-height: 1.5;
-      }
-      .input-group {
-        display: flex;
-        gap: 8px;
-        width: 100%;
-        max-width: 360px;
-      }
-      input {
-        padding: 14px 16px;
-        border: 1px solid #2a3348;
-        border-radius: 12px;
-        background: #151b2b;
-        color: #fff;
-        font-size: 16px;
-        outline: none;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-align: center;
-        flex: 1;
-        min-width: 0;
-      }
-      input:focus {
-        border-color: #4f8cff;
+        max-width: 340px;
+        line-height: 1.6;
       }
       button {
         padding: 14px 22px;
@@ -89,29 +66,25 @@
       .btn-primary {
         background: linear-gradient(135deg, #4f8cff, #6366f1);
       }
-      .divider {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
+      .btn-primary.big {
+        font-size: 17px;
+        padding: 20px 40px;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(79, 140, 255, 0.3);
+      }
+      #lobbyStatus {
+        color: #8892b0;
+        font-size: 13px;
+        text-align: center;
         max-width: 360px;
+        min-height: 20px;
+        line-height: 1.5;
+      }
+      #cancelWait {
         color: #4a5568;
         font-size: 12px;
-      }
-      .divider::before,
-      .divider::after {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: #2a3348;
-      }
-      #config-warn {
-        background: #7f1d1d;
-        padding: 10px 16px;
-        border-radius: 10px;
-        font-size: 12px;
-        max-width: 360px;
-        text-align: center;
+        text-decoration: underline;
+        cursor: pointer;
         display: none;
       }
       #call {
@@ -138,37 +111,88 @@
         transform: scaleX(-1);
         z-index: 10;
         background: #111;
+        transition:
+          width 0.25s ease,
+          height 0.25s ease,
+          border-color 0.15s,
+          box-shadow 0.15s;
       }
       #localVideo.rear {
         transform: none;
       }
-      #roomBadge {
+      body.tracking #localVideo {
+        width: 132px;
+        height: 176px;
+      }
+      #localVideo.motion {
+        border-color: #ef4444;
+        box-shadow: 0 0 14px rgba(239, 68, 68, 0.9);
+      }
+
+      /* ── câmera frontal "seguidora" (PiP móvel) ── */
+      #localVideo2 {
         position: absolute;
-        top: 16px;
         left: 16px;
+        top: 0;
+        width: 100px;
+        height: 134px;
+        object-fit: cover;
+        border-radius: 14px;
+        border: 2px solid rgba(168, 85, 247, 0.75);
+        z-index: 11;
+        background: #111;
+        display: none;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        will-change: left, top;
+      }
+
+      /* ── overlay do detector de movimento ── */
+      #motionCanvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 12;
+        pointer-events: none;
+        border-radius: 14px;
+        display: none;
+      }
+
+      /* ── aviso de movimento vindo do outro lado ── */
+      #remoteMotion {
+        position: absolute;
+        inset: 0;
+        border: 4px solid rgba(239, 68, 68, 0.85);
+        border-radius: 6px;
+        pointer-events: none;
+        z-index: 9;
+      }
+      #remoteMotion::after {
+        content: "🔴 Movimento detectado do outro lado";
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        background: rgba(239, 68, 68, 0.9);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 8px;
+      }
+
+      #status {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(10px);
-        padding: 12px 18px;
-        border-radius: 12px;
-        font-size: 20px;
-        font-weight: 700;
-        letter-spacing: 4px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        z-index: 10;
-        cursor: pointer;
-        user-select: none;
-        display: flex;
-        gap: 10px;
-        align-items: center;
-      }
-      #roomBadge span:first-child {
-        font-weight: 400;
-        color: #8892b0;
-        letter-spacing: 0;
+        padding: 10px 20px;
+        border-radius: 20px;
         font-size: 14px;
-      }
-      #roomCode {
-        color: #4f8cff;
+        z-index: 10;
+        white-space: nowrap;
+        max-width: 90vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       #controls {
         position: absolute;
@@ -203,20 +227,9 @@
       .ctrl-btn.danger {
         background: #ef4444;
       }
-      #status {
-        position: absolute;
-        bottom: 96px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.75);
-        padding: 8px 18px;
-        border-radius: 20px;
-        font-size: 13px;
-        z-index: 10;
-        white-space: nowrap;
-        max-width: 90vw;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      .ctrl-btn.on {
+        background: linear-gradient(135deg, #4f8cff, #a855f7);
+        box-shadow: 0 0 16px rgba(168, 85, 247, 0.65);
       }
       #log {
         position: absolute;
@@ -262,33 +275,24 @@
   <body>
     <div id="lobby">
       <h1>📹 Vídeo Chamada P2P</h1>
-      <p>WebRTC · Firebase · câmera frontal/traseira</p>
-      <div id="config-warn">
-        ⚠️ Preencha <code>firebaseConfig</code> no código
-      </div>
-      <button class="btn-primary" id="createBtn" onclick="createRoom()">
-        ➕ Criar Nova Sala
+      <p>
+        Aperte o botão. A conexão é automática entre duas pessoas — sem código.
+        Abra em dois dispositivos e aperte nos dois. Dentro da chamada use o
+        botão 🎯 para ativar o rastreamento de movimento.
+      </p>
+      <button class="btn-primary big" id="goBtn" onclick="go()">
+        📞 Entrar na Chamada
       </button>
-      <div class="divider">ou</div>
-      <div class="input-group">
-        <input
-          type="text"
-          id="roomInput"
-          placeholder="CÓDIGO"
-          maxlength="6"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button class="btn-primary" onclick="joinRoom()">Entrar</button>
-      </div>
+      <div id="lobbyStatus"></div>
+      <span id="cancelWait" onclick="cancelWait()">cancelar espera</span>
     </div>
 
     <div id="call">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideo" autoplay playsinline muted></video>
-      <div id="roomBadge" onclick="copyRoomCode()" title="Clique para copiar">
-        <span>Sala:</span><span id="roomCode">------</span>
-      </div>
+      <video id="localVideo2" autoplay playsinline muted></video>
+      <canvas id="motionCanvas"></canvas>
+      <div id="remoteMotion" class="hidden"></div>
       <div id="status">Preparando…</div>
       <div id="controls">
         <button class="ctrl-btn" id="micBtn" onclick="toggleMic()">
@@ -308,7 +312,19 @@
             />
           </svg>
         </button>
-        <button class="ctrl-btn danger" onclick="hangUp()">
+        <button
+          class="ctrl-btn"
+          id="trackBtn"
+          onclick="toggleTracking()"
+          title="Rastreamento de movimento"
+        >
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
+            />
+          </svg>
+        </button>
+        <button class="ctrl-btn danger" onclick="hangUp()" title="Encerrar">
           <svg viewBox="0 0 24 24">
             <path
               d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"
@@ -325,9 +341,6 @@
     </div>
 
     <script type="module">
-      /* ═══════════════════════════════════════════════════════════════
-         IMPORTS (CDN — não precisa de bundler)
-         ═══════════════════════════════════════════════════════════════ */
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
       import {
         getDatabase,
@@ -340,11 +353,9 @@
         remove,
         onDisconnect,
         get,
+        runTransaction,
       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-      /* ═══════════════════════════════════════════════════════════════
-         CONFIG FIREBASE (única, já preenchida)
-         ═══════════════════════════════════════════════════════════════ */
       const firebaseConfig = {
         apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
         authDomain: "trader-b13c9.firebaseapp.com",
@@ -356,40 +367,17 @@
         measurementId: "G-TM60VT87GY",
       };
 
-      /* ═══════════════════════════════════════════════════════════════
-         LOG
-         ═══════════════════════════════════════════════════════════════ */
-      const logEl = () => document.getElementById("log");
-      function log(msg, cls = "l") {
-        const el = logEl();
-        if (el) {
-          const line = document.createElement("div");
-          line.className = cls;
-          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-          el.appendChild(line);
-          el.scrollTop = el.scrollHeight;
-        }
-        console.log(`[${cls}]`, msg);
-      }
-      window.toggleLog = () => logEl().classList.toggle("collapsed");
-
-      /* ═══════════════════════════════════════════════════════════════
-         INIT FIREBASE
-         ═══════════════════════════════════════════════════════════════ */
-      let app = null;
       let db = null;
       try {
-        app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
         db = getDatabase(app);
-        log("✓ Firebase inicializado", "ok");
       } catch (e) {
-        log("❌ Erro Firebase: " + e.message, "err");
-        document.getElementById("config-warn").style.display = "block";
+        console.error("Firebase init:", e);
       }
 
-      /* ═══════════════════════════════════════════════════════════════
-         WEBRTC CONFIG (STUN + TURN público)
-         ═══════════════════════════════════════════════════════════════ */
+      const ROOM = "principal"; // sala fixa (todos caem nela)
+      const STALE_MS = 5 * 60 * 1000; // oferta sem resposta expira em 5min
+
       const rtcConfig = {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
@@ -413,44 +401,127 @@
         ],
       };
 
-      /* ═══════════════════════════════════════════════════════════════
-         ESTADO
-         ═══════════════════════════════════════════════════════════════ */
+      // ── estado ────────────────────────────────────────────
       let pc = null;
       let localStream = null;
-      let roomId = null;
       let currentFacing = "user";
       let micEnabled = true;
       let unsubs = [];
       let pendingCandidates = [];
       let isCaller = false;
-      let answererSeen = false;
       let hangingUp = false;
+      let answererSeen = false;
+      let roomRef = null;
+      let waitTimer = null;
 
-      /* ═══════════════════════════════════════════════════════════════
-         HELPERS
-         ═══════════════════════════════════════════════════════════════ */
-      function genCode() {
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
-        let c = "";
-        for (let i = 0; i < 6; i++)
-          c += chars[Math.floor(Math.random() * chars.length)];
-        return c;
+      /* ============================================================
+         ESTADO DO RASTREAMENTO / DETECÇÃO DE MOVIMENTO
+         ============================================================ */
+      let trackingOn = false; // modo rastreamento ativo?
+      let secondaryStream = null; // câmera frontal (a que "segue")
+      let motionRaf = null; // requestAnimationFrame do loop
+      let prevGray = null; // frame anterior (escala de cinza)
+      let motionActive = false; // há movimento agora?
+      let lastMotionAt = 0; // timestamp do último movimento
+      let lastAnalyze = 0; // throttle da análise
+      let lastSentAt = 0; // throttle do envio ao peer
+      let motionChannel = null; // DataChannel p/ avisar o outro lado
+
+      // posição suavizada do PiP seguidor
+      let followerPos = null;
+      let followerTarget = null;
+
+      const MOTION_MIN_RATIO = 0.02; // 2% dos pixels mudando = movimento
+      const MOTION_PIXEL_DIFF = 24; // diferença mínima de luminância
+      const MOTION_HOLD_MS = 900; // histerese (evita piscar)
+      const MW = 96; // largura da grade de análise
+      const MH = 72; // altura da grade de análise
+      const FOLLOW_W = 100; // largura do PiP seguidor (igual ao CSS)
+      const FOLLOW_H = 134; // altura do PiP seguidor (igual ao CSS)
+
+      const $ = (id) => document.getElementById(id);
+
+      // canvas oculto só para análise
+      const analysisCanvas = document.createElement("canvas");
+      analysisCanvas.width = MW;
+      analysisCanvas.height = MH;
+      const actx = analysisCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+
+      function log(msg, cls = "l") {
+        const el = $("log");
+        if (el) {
+          const line = document.createElement("div");
+          line.className = cls;
+          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+          el.appendChild(line);
+          el.scrollTop = el.scrollHeight;
+        }
+        console.log(`[${cls}]`, msg);
+      }
+      window.toggleLog = () => $("log").classList.toggle("collapsed");
+      function setLobbyStatus(t) {
+        $("lobbyStatus").textContent = t || "";
+      }
+      function setStatus(t) {
+        const el = $("status");
+        el.textContent = t;
+        el.classList.remove("hidden");
+      }
+      function markConnected() {
+        setStatus("Conectado ✓");
+        setTimeout(() => {
+          const el = $("status");
+          if (el.textContent === "Conectado ✓") el.classList.add("hidden");
+        }, 2500);
       }
 
+      // ── câmera com fallback ───────────────────────────────
       async function startCamera(facing = "user") {
         if (!navigator.mediaDevices?.getUserMedia)
-          throw new Error("getUserMedia indisponível — use HTTPS ou localhost");
-        return navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: facing },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: { echoCancellation: true, noiseSuppression: true },
-        });
+          throw new Error("Câmera indisponível — use HTTPS ou localhost");
+        try {
+          return await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: facing },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: { echoCancellation: true, noiseSuppression: true },
+          });
+        } catch (e1) {
+          log(
+            `⚠ facingMode falhou (${e1.name}), tentando câmera padrão`,
+            "warn",
+          );
+          try {
+            return await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true,
+            });
+          } catch (e2) {
+            if (
+              e2.name === "NotFoundError" ||
+              e2.name === "DevicesNotFoundError"
+            )
+              throw new Error(
+                "Nenhuma câmera/microfone encontrado. Conecte um dispositivo e tente de novo.",
+              );
+            if (e2.name === "NotAllowedError" || e2.name === "SecurityError")
+              throw new Error(
+                "Permissão de câmera negada. Libere nas configurações do navegador.",
+              );
+            if (e2.name === "NotReadableError")
+              throw new Error(
+                "Câmera em uso por outro aplicativo. Feche-o e tente novamente.",
+              );
+            throw new Error("Erro de mídia: " + e2.name + " — " + e2.message);
+          }
+        }
       }
 
+      // ── ICE ───────────────────────────────────────────────
       async function addCandidate(c) {
         if (!pc) return;
         if (pc.remoteDescription && pc.remoteDescription.type) {
@@ -465,7 +536,6 @@
           log(`⏸ ICE na fila (${pendingCandidates.length})`, "warn");
         }
       }
-
       async function flushCandidates() {
         if (!pc) return;
         if (pendingCandidates.length)
@@ -480,39 +550,61 @@
         pendingCandidates = [];
       }
 
-      function setStatus(m) {
-        const el = document.getElementById("status");
-        el.textContent = m;
-        el.classList.remove("hidden");
+      // ── canal de dados p/ avisar movimento ao outro lado ──
+      function setupMotionChannel(ch) {
+        motionChannel = ch;
+        ch.onopen = () => log("✓ Canal de movimento aberto", "ok");
+        ch.onclose = () => {
+          if (motionChannel === ch) motionChannel = null;
+        };
+        ch.onerror = () => {};
+        ch.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (msg.type === "motion") setRemoteMotion(!!msg.active);
+          } catch {}
+        };
       }
 
-      function markConnected() {
-        setStatus("Conectado ✓");
-        setTimeout(() => {
-          const el = document.getElementById("status");
-          if (el.textContent === "Conectado ✓") el.classList.add("hidden");
-        }, 2500);
+      let remoteMotionTimer = null;
+      function setRemoteMotion(active) {
+        const el = $("remoteMotion");
+        if (!el) return;
+        el.classList.toggle("hidden", !active);
+        clearTimeout(remoteMotionTimer);
+        if (active) {
+          remoteMotionTimer = setTimeout(() => setRemoteMotion(false), 1600);
+        }
       }
 
+      function sendMotion(active, level) {
+        if (!motionChannel || motionChannel.readyState !== "open") return;
+        try {
+          motionChannel.send(
+            JSON.stringify({
+              type: "motion",
+              active,
+              level: Math.min(1, (level || 0) * 5),
+            }),
+          );
+        } catch {}
+      }
+
+      // ── peer connection ───────────────────────────────────
       function newPeer() {
         pc = new RTCPeerConnection(rtcConfig);
 
         pc.onicecandidate = (e) => {
-          if (e.candidate && roomId) {
-            push(
-              ref(
-                db,
-                `rooms/${roomId}/${isCaller ? "callerCandidates" : "answererCandidates"}`,
-              ),
-              e.candidate.toJSON(),
-            );
+          if (e.candidate && roomRef) {
+            const path = isCaller ? "callerCandidates" : "answererCandidates";
+            push(ref(db, `rooms/${ROOM}/${path}`), e.candidate.toJSON());
             log("→ ICE enviado", "l");
           }
         };
 
         pc.ontrack = (e) => {
           log("🎥 Vídeo remoto chegou!", "ok");
-          const rv = document.getElementById("remoteVideo");
+          const rv = $("remoteVideo");
           rv.srcObject = e.streams[0];
           rv.play().catch(() => {
             log("⚠ Autoplay bloqueado — toque na tela", "warn");
@@ -532,273 +624,39 @@
           if (st === "connected" || st === "completed") markConnected();
           if (st === "failed") setStatus("Falha de conexão (NAT?)");
         };
-
         return pc;
       }
 
       function showCall() {
-        document.getElementById("lobby").style.display = "none";
-        document.getElementById("call").style.display = "block";
-        document.getElementById("localVideo").srcObject = localStream;
-        document.getElementById("roomCode").textContent = roomId;
-        document
-          .getElementById("localVideo")
-          .classList.toggle("rear", currentFacing === "environment");
+        $("lobby").style.display = "none";
+        $("call").style.display = "block";
+        $("localVideo").srcObject = localStream;
+        $("localVideo").classList.toggle(
+          "rear",
+          currentFacing === "environment",
+        );
       }
 
-      /* ═══════════════════════════════════════════════════════════════
-         CALLER — criar sala
-         ═══════════════════════════════════════════════════════════════ */
-      window.createRoom = async () => {
-        if (!db) return alert("Configure o Firebase primeiro");
-        const btn = document.getElementById("createBtn");
-        btn.disabled = true;
-
-        try {
-          isCaller = true;
-          answererSeen = false;
-
-          // gera código único
-          for (let i = 0; i < 5 && !roomId; i++) {
-            const candidate = genCode();
-            const snap = await get(ref(db, `rooms/${candidate}`));
-            if (!snap.exists()) roomId = candidate;
-          }
-          if (!roomId) throw new Error("Não foi possível gerar código único");
-
-          log("Criando sala " + roomId, "step");
-
-          localStream = await startCamera(currentFacing);
-          log("✓ Câmera local ok", "ok");
-          showCall();
-
-          newPeer();
-          localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-
-          const offer = await pc.createOffer();
-          const roomRef = ref(db, `rooms/${roomId}`);
-
-          // Grava a sala ANTES de setLocalDescription, para que o "set"
-          // não apague candidatos ICE que já tenham chegado.
-          await set(roomRef, {
-            createdAt: Date.now(),
-            offer: { type: offer.type, sdp: offer.sdp },
-          });
-          onDisconnect(roomRef).remove();
-          log("✓ Sala salva com offer", "ok");
-
-          // só agora começa a coleta de ICE (sala já existe)
-          await pc.setLocalDescription(offer);
-          setStatus("Aguardando alguém entrar…");
-
-          // answer recebida
-          unsubs.push(
-            onValue(ref(db, `rooms/${roomId}/answer`), async (snap) => {
-              const ans = snap.val();
-              if (!ans || !pc || pc.currentRemoteDescription) return;
-              log("← Answer recebida", "step");
-              try {
-                await pc.setRemoteDescription(new RTCSessionDescription(ans));
-                await flushCandidates();
-                setStatus("Conectando…");
-              } catch (e) {
-                log("❌ setRemoteDescription: " + e.message, "err");
-              }
-            }),
-          );
-
-          // candidatos do answerer
-          unsubs.push(
-            onChildAdded(
-              ref(db, `rooms/${roomId}/answererCandidates`),
-              (snap) => {
-                const c = snap.val();
-                if (c) addCandidate(new RTCIceCandidate(c));
-              },
-            ),
-          );
-
-          // presença do answerer (detecta quando ele sai)
-          unsubs.push(
-            onValue(ref(db, `rooms/${roomId}/answerer`), (snap) => {
-              const v = snap.val();
-              if (v) {
-                answererSeen = true;
-              } else if (answererSeen && pc && !hangingUp) {
-                log("⚠ O outro lado saiu da chamada", "warn");
-                hangUp();
-              }
-            }),
-          );
-        } catch (e) {
-          log("❌ " + e.message, "err");
-          alert(e.message);
-          btn.disabled = false;
-        }
-      };
-
-      /* ═══════════════════════════════════════════════════════════════
-         ANSWERER — entrar na sala
-         ═══════════════════════════════════════════════════════════════ */
-      window.joinRoom = async () => {
-        if (!db) return alert("Configure o Firebase primeiro");
-        const code = document
-          .getElementById("roomInput")
-          .value.trim()
-          .toUpperCase();
-        if (code.length < 4) return alert("Código inválido");
-
-        try {
-          isCaller = false;
-          roomId = code;
-          log("Entrando na sala " + roomId, "step");
-
-          const roomSnap = await get(ref(db, `rooms/${roomId}`));
-          if (!roomSnap.exists()) {
-            alert("Sala não encontrada: " + roomId + "\n\nVerifique o código.");
-            log("❌ Sala não existe", "err");
-            roomId = null;
-            return;
-          }
-          if (!roomSnap.val().offer) {
-            alert("Sala existe, mas sem offer (chamador saiu?)");
-            log("⚠ Sala sem offer", "warn");
-            roomId = null;
-            return;
-          }
-
-          localStream = await startCamera(currentFacing);
-          log("✓ Câmera local ok", "ok");
-          showCall();
-
-          newPeer();
-          localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-
-          const roomRef = ref(db, `rooms/${roomId}`);
-
-          // presença: se fechar a aba, o caller sabe
-          const presenceRef = ref(db, `rooms/${roomId}/answerer`);
-          await set(presenceRef, true);
-          onDisconnect(presenceRef).remove();
-
-          // offer
-          unsubs.push(
-            onValue(ref(db, `rooms/${roomId}/offer`), async (snap) => {
-              const offer = snap.val();
-              if (!offer || !pc || pc.currentRemoteDescription) return;
-              log("← Offer recebida", "step");
-              try {
-                await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                await flushCandidates();
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await update(roomRef, {
-                  answer: { type: answer.type, sdp: answer.sdp },
-                });
-                log("✓ Answer enviada", "ok");
-                setStatus("Conectando…");
-              } catch (e) {
-                log("❌ Answer: " + e.message, "err");
-              }
-            }),
-          );
-
-          // candidatos do caller
-          unsubs.push(
-            onChildAdded(
-              ref(db, `rooms/${roomId}/callerCandidates`),
-              (snap) => {
-                const c = snap.val();
-                if (c) addCandidate(new RTCIceCandidate(c));
-              },
-            ),
-          );
-
-          // sala removida = chamador encerrou
-          unsubs.push(
-            onValue(roomRef, (snap) => {
-              if (!snap.exists() && pc && !hangingUp) {
-                log("⚠ Chamador encerrou a sala", "warn");
-                hangUp();
-              }
-            }),
-          );
-        } catch (e) {
-          log("❌ " + e.message, "err");
-          alert(e.message);
-          roomId = null;
-        }
-      };
-
-      /* ═══════════════════════════════════════════════════════════════
-         CONTROLES
-         ═══════════════════════════════════════════════════════════════ */
-      window.toggleMic = () => {
-        if (!localStream) return;
-        const a = localStream.getAudioTracks()[0];
-        if (!a) return;
-        micEnabled = !micEnabled;
-        a.enabled = micEnabled;
-        document.getElementById("micBtn").classList.toggle("off", !micEnabled);
-        log(micEnabled ? "🎤 Microfone ligado" : "🔇 Microfone desligado", "l");
-      };
-
-      window.switchCamera = async () => {
-        if (!localStream) return;
-        currentFacing = currentFacing === "user" ? "environment" : "user";
-        log("Trocando câmera → " + currentFacing, "step");
-        try {
-          const s = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: currentFacing },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-          });
-          const t = s.getVideoTracks()[0];
-
-          if (pc) {
-            const sender = pc
-              .getSenders()
-              .find((x) => x.track && x.track.kind === "video");
-            if (sender) await sender.replaceTrack(t);
-          }
-
-          const old = localStream.getVideoTracks()[0];
-          if (old) {
-            old.stop();
-            localStream.removeTrack(old);
-          }
-          localStream.addTrack(t);
-
-          document.getElementById("localVideo").srcObject = localStream;
-          document
-            .getElementById("localVideo")
-            .classList.toggle("rear", currentFacing === "environment");
-          log("✓ Câmera trocada", "ok");
-        } catch (e) {
-          log("❌ " + e.message, "err");
-        }
-      };
-
-      window.hangUp = async () => {
-        if (hangingUp) return;
-        hangingUp = true;
-
+      function cleanupLocal() {
+        stopTracking(); // garante que a 2ª câmera/loop morrem junto
         unsubs.forEach((u) => {
           try {
             u();
           } catch {}
         });
         unsubs = [];
-
+        if (motionChannel) {
+          try {
+            motionChannel.close();
+          } catch {}
+          motionChannel = null;
+        }
         if (pc) {
           try {
             pc.close();
           } catch {}
           pc = null;
         }
-
         if (localStream) {
           localStream.getTracks().forEach((t) => {
             try {
@@ -807,78 +665,641 @@
           });
           localStream = null;
         }
+        pendingCandidates = [];
+        answererSeen = false;
+        isCaller = false;
+        roomRef = null;
+      }
 
-        if (roomId) {
-          try {
-            if (isCaller) {
-              await remove(ref(db, `rooms/${roomId}`));
-            } else {
-              await remove(ref(db, `rooms/${roomId}/answerer`));
+      // ── entrada: 1 botão decide sozinho ───────────────────
+      window.go = async () => {
+        if (!db) return alert("Firebase não inicializado");
+        if (hangingUp) return;
+        $("goBtn").disabled = true;
+        $("cancelWait").style.display = "none";
+        try {
+          roomRef = ref(db, `rooms/${ROOM}`);
+          const snap = await get(roomRef);
+          const data = snap.val();
+          const now = Date.now();
+          const hasOffer = data && data.offer;
+          const hasAnswer = data && data.answer;
+          const stale = !data || now - (data.createdAt || 0) > STALE_MS;
+          const active = hasOffer && hasAnswer; // chamada em andamento
+          const waiting = hasOffer && !hasAnswer && !stale; // alguém esperando
+
+          log(
+            `Sala: existe=${!!data} offer=${!!hasOffer} answer=${!!hasAnswer} stale=${stale}`,
+            "l",
+          );
+
+          // caso 1: chamada ativa → espera (sem abrir câmera)
+          if (active) {
+            setLobbyStatus("Sala ocupada — aguardando o outro sair…");
+            $("cancelWait").style.display = "inline";
+            clearTimeout(waitTimer);
+            waitTimer = setTimeout(() => {
+              go();
+            }, 3000);
+            return;
+          }
+
+          // caso 2: livre → precisa de câmera
+          if (!localStream) {
+            setLobbyStatus("Preparando câmera…");
+            localStream = await startCamera(currentFacing);
+            log("✓ Câmera ok", "ok");
+          }
+          showCall();
+
+          if (waiting) {
+            log("→ Entrando como participante 2", "step");
+            await startAnswerer(data.offer);
+          } else {
+            log("→ Entrando como participante 1", "step");
+            await tryBecomeCaller();
+          }
+        } catch (e) {
+          log("❌ " + e.message, "err");
+          setLobbyStatus("❌ " + e.message);
+          $("goBtn").disabled = false;
+        }
+      };
+
+      window.cancelWait = () => {
+        clearTimeout(waitTimer);
+        $("cancelWait").style.display = "none";
+        setLobbyStatus("");
+        $("goBtn").disabled = false;
+      };
+
+      // ── virar "chamador" (com trava pra evitar corrida) ──
+      async function tryBecomeCaller() {
+        isCaller = true;
+        newPeer();
+        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+
+        // cria o canal de dados ANTES da offer (assim ele é negociado junto)
+        try {
+          setupMotionChannel(pc.createDataChannel("motion", { ordered: true }));
+        } catch (e) {
+          log("⚠ DataChannel indisponível: " + e.message, "warn");
+        }
+
+        const offer = await pc.createOffer();
+        const offerObj = { type: offer.type, sdp: offer.sdp };
+
+        const txRes = await runTransaction(roomRef, (current) => {
+          if (current && current.offer && current.answer) return; // ativa → abort
+          const cStale =
+            !current || Date.now() - (current.createdAt || 0) > STALE_MS;
+          if (current && current.offer && !cStale) return; // alguém esperando → abort
+          return { createdAt: Date.now(), offer: offerObj };
+        });
+
+        if (!txRes.committed) {
+          log("⚠ Alguém chegou primeiro, reavaliando…", "warn");
+          if (pc) {
+            try {
+              pc.close();
+            } catch {}
+            pc = null;
+          }
+          return go();
+        }
+
+        log("✓ Sala reservada com offer", "ok");
+        onDisconnect(roomRef).remove();
+        await pc.setLocalDescription(offer);
+        setStatus("Aguardando alguém entrar…");
+
+        unsubs.push(
+          onValue(ref(db, `rooms/${ROOM}/answer`), async (snap) => {
+            const ans = snap.val();
+            if (!ans || !pc || pc.currentRemoteDescription) return;
+            log("← Answer recebida", "step");
+            try {
+              await pc.setRemoteDescription(new RTCSessionDescription(ans));
+              await flushCandidates();
+              setStatus("Conectando…");
+            } catch (e) {
+              log("❌ setRemoteDescription: " + e.message, "err");
             }
+          }),
+        );
+
+        unsubs.push(
+          onChildAdded(ref(db, `rooms/${ROOM}/answererCandidates`), (snap) => {
+            const c = snap.val();
+            if (c) addCandidate(new RTCIceCandidate(c));
+          }),
+        );
+
+        unsubs.push(
+          onValue(ref(db, `rooms/${ROOM}/answerer`), (snap) => {
+            const v = snap.val();
+            if (v) answererSeen = true;
+            else if (answererSeen && pc && !hangingUp) {
+              log("⚠ O outro lado saiu da chamada", "warn");
+              hangUp();
+            }
+          }),
+        );
+      }
+
+      // ── virar "atendedor" ─────────────────────────────────
+      async function startAnswerer(offerData) {
+        isCaller = false;
+        newPeer();
+        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+
+        // recebe o canal de dados criado pelo chamador
+        pc.ondatachannel = (e) => {
+          if (e.channel && e.channel.label === "motion")
+            setupMotionChannel(e.channel);
+        };
+
+        const presenceRef = ref(db, `rooms/${ROOM}/answerer`);
+        await set(presenceRef, true);
+        onDisconnect(presenceRef).remove();
+
+        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+        await flushCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await update(roomRef, {
+          answer: { type: answer.type, sdp: answer.sdp },
+        });
+        log("✓ Answer enviada", "ok");
+        setStatus("Conectando…");
+
+        unsubs.push(
+          onChildAdded(ref(db, `rooms/${ROOM}/callerCandidates`), (snap) => {
+            const c = snap.val();
+            if (c) addCandidate(new RTCIceCandidate(c));
+          }),
+        );
+
+        unsubs.push(
+          onValue(roomRef, (snap) => {
+            if (!snap.exists() && !hangingUp) {
+              log("⚠ O outro lado encerrou a chamada", "warn");
+              hangUp();
+            }
+          }),
+        );
+      }
+
+      /* ============================================================
+         RASTREAMENTO: câmera frontal "segue" o movimento da traseira
+         ============================================================ */
+
+      // troca a câmera principal para um facing específico
+      async function applyFacing(facing) {
+        if (!localStream) return;
+        log("Trocando câmera principal → " + facing, "step");
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: facing } },
+          });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
+        const t = stream.getVideoTracks()[0];
+        if (pc) {
+          const sender = pc
+            .getSenders()
+            .find((x) => x.track && x.track.kind === "video");
+          if (sender) await sender.replaceTrack(t);
+        }
+        const old = localStream.getVideoTracks()[0];
+        if (old) {
+          old.stop();
+          localStream.removeTrack(old);
+        }
+        localStream.addTrack(t);
+        currentFacing = facing;
+        $("localVideo").srcObject = localStream;
+        $("localVideo").classList.toggle("rear", facing === "environment");
+        log("✓ Câmera principal trocada", "ok");
+      }
+
+      // área onde o PiP seguidor pode circular
+      function followerBounds() {
+        const pad = 16;
+        const minTop = 84;
+        const maxTop = Math.max(minTop, window.innerHeight - FOLLOW_H - 100);
+        const minLeft = pad;
+        const maxLeft = Math.max(minLeft, window.innerWidth - FOLLOW_W - pad);
+        return { minLeft, maxLeft, minTop, maxTop };
+      }
+
+      function sizeOverlay() {
+        const v = $("localVideo");
+        const c = $("motionCanvas");
+        if (!v || !c) return;
+        const r = v.getBoundingClientRect();
+        c.width = Math.max(1, Math.round(r.width));
+        c.height = Math.max(1, Math.round(r.height));
+        c.style.width = r.width + "px";
+        c.style.height = r.height + "px";
+        c.style.left = r.left + "px";
+        c.style.top = r.top + "px";
+      }
+
+      // movimento suave do PiP seguidor (roda a cada frame)
+      function updateFollower() {
+        if (!secondaryStream || !followerPos || !followerTarget) return;
+        const el = $("localVideo2");
+        const dx = followerTarget.left - followerPos.left;
+        const dy = followerTarget.top - followerPos.top;
+        if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4) return;
+        followerPos.left += dx * 0.16;
+        followerPos.top += dy * 0.16;
+        el.style.left = followerPos.left.toFixed(1) + "px";
+        el.style.top = followerPos.top.toFixed(1) + "px";
+      }
+
+      function drawMotionOverlay(active, box) {
+        const c = $("motionCanvas");
+        if (!c) return;
+        const g = c.getContext("2d");
+        g.clearRect(0, 0, c.width, c.height);
+        if (!active || !box) return;
+
+        const mirrored = !$("localVideo").classList.contains("rear");
+        const sx = c.width / MW;
+        const sy = c.height / MH;
+
+        let x0 = box.minX;
+        let x1 = box.maxX;
+        if (mirrored) {
+          x0 = MW - 1 - box.maxX;
+          x1 = MW - 1 - box.minX;
+        }
+
+        const rx = x0 * sx - 2;
+        const ry = box.minY * sy - 2;
+        const rw = (x1 - x0 + 1) * sx + 4;
+        const rh = (box.maxY - box.minY + 1) * sy + 4;
+
+        g.fillStyle = "rgba(239,68,68,0.14)";
+        g.fillRect(rx, ry, rw, rh);
+        g.strokeStyle = "#ef4444";
+        g.lineWidth = 2;
+        g.strokeRect(rx, ry, rw, rh);
+      }
+
+      // analisa um frame (roda ~10x por segundo)
+      function analyzeFrame(now) {
+        const v = $("localVideo");
+        if (!v || !v.videoWidth) return;
+
+        try {
+          actx.drawImage(v, 0, 0, MW, MH);
+        } catch {
+          return;
+        }
+        const d = actx.getImageData(0, 0, MW, MH).data;
+
+        // converte para luminância
+        const gray = new Uint8Array(MW * MH);
+        for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+          gray[j] = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
+        }
+
+        let ratio = 0;
+        let cx = 0.5;
+        let cy = 0.5;
+        let box = null;
+
+        if (prevGray) {
+          let count = 0;
+          let sx = 0;
+          let sy = 0;
+          let minX = MW;
+          let minY = MH;
+          let maxX = -1;
+          let maxY = -1;
+
+          for (let y = 0; y < MH; y++) {
+            const row = y * MW;
+            for (let x = 0; x < MW; x++) {
+              const k = row + x;
+              const diff = gray[k] - prevGray[k];
+              if (diff > MOTION_PIXEL_DIFF || diff < -MOTION_PIXEL_DIFF) {
+                count++;
+                sx += x;
+                sy += y;
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+
+          if (count > 0) {
+            ratio = count / (MW * MH);
+            cx = sx / count / (MW - 1);
+            cy = sy / count / (MH - 1);
+            box = { minX, minY, maxX, maxY };
+          }
+        }
+        prevGray = gray;
+
+        // histerese: continua "ativo" por MOTION_HOLD_MS após o último movimento
+        if (ratio > MOTION_MIN_RATIO) lastMotionAt = now;
+        const active = now - lastMotionAt < MOTION_HOLD_MS;
+        const changed = active !== motionActive;
+
+        if (changed) {
+          motionActive = active;
+          $("localVideo").classList.toggle("motion", active);
+          log(
+            active ? "🏃 Movimento detectado" : "· Movimento cessou",
+            active ? "step" : "l",
+          );
+        }
+
+        // avisa o outro lado (na transição e em heartbeat de 700ms)
+        if (active && (changed || now - lastSentAt > 700)) {
+          lastSentAt = now;
+          sendMotion(true, ratio);
+        } else if (!active && changed) {
+          sendMotion(false, 0);
+        }
+
+        drawMotionOverlay(active, box);
+
+        // câmera frontal "segue" o movimento da traseira
+        if (secondaryStream && followerTarget) {
+          const b = followerBounds();
+          if (active) {
+            const mirrored = !$("localVideo").classList.contains("rear");
+            const nx = mirrored ? 1 - cx : cx;
+            const ny = cy;
+            followerTarget = {
+              left: b.minLeft + nx * (b.maxLeft - b.minLeft),
+              top: b.minTop + ny * (b.maxTop - b.minTop),
+            };
+          } else {
+            // sem movimento → volta ao canto de descanso
+            followerTarget = { left: b.minLeft, top: b.maxTop };
+          }
+        }
+      }
+
+      // loop principal
+      function motionLoop(ts) {
+        if (!trackingOn) return;
+        motionRaf = requestAnimationFrame(motionLoop);
+        updateFollower();
+        if (ts - lastAnalyze < 90) return;
+        lastAnalyze = ts;
+        analyzeFrame(ts);
+      }
+
+      async function startTracking() {
+        if (!localStream) throw new Error("Câmera não iniciada");
+
+        trackingOn = true;
+        document.body.classList.add("tracking");
+        $("trackBtn").classList.add("on");
+
+        // 1) câmera principal passa a ser a traseira
+        if (currentFacing !== "environment") {
+          try {
+            await applyFacing("environment");
+          } catch (e) {
+            log("⚠ Não foi possível mudar p/ traseira: " + e.message, "warn");
+          }
+        }
+
+        // 2) abre a câmera frontal como "seguidora"
+        try {
+          secondaryStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "user" },
+              width: { ideal: 640 },
+              height: { ideal: 480 },
+            },
+            audio: false,
+          });
+
+          const mainId = localStream
+            .getVideoTracks()[0]
+            ?.getSettings().deviceId;
+          const secId = secondaryStream
+            .getVideoTracks()[0]
+            ?.getSettings().deviceId;
+
+          if (mainId && secId && mainId === secId) {
+            secondaryStream.getTracks().forEach((t) => {
+              try {
+                t.stop();
+              } catch {}
+            });
+            secondaryStream = null;
+            log(
+              "ℹ Só há uma câmera disponível — modo apenas com detecção de movimento",
+              "warn",
+            );
+          }
+        } catch (e) {
+          secondaryStream = null;
+          log(
+            "⚠ Segunda câmera indisponível (" +
+              e.name +
+              ") — só detecção de movimento",
+            "warn",
+          );
+        }
+
+        if (secondaryStream) {
+          const v2 = $("localVideo2");
+          v2.srcObject = secondaryStream;
+          v2.style.display = "block";
+
+          const b = followerBounds();
+          followerPos = { left: b.minLeft, top: b.maxTop };
+          followerTarget = { left: b.minLeft, top: b.maxTop };
+          v2.style.left = followerPos.left + "px";
+          v2.style.top = followerPos.top + "px";
+
+          log("✓ Câmera frontal ativa (segue o movimento)", "ok");
+        }
+
+        // 3) overlay + loop de detecção
+        $("motionCanvas").style.display = "block";
+        requestAnimationFrame(() => {
+          sizeOverlay();
+        });
+        setTimeout(sizeOverlay, 300);
+
+        prevGray = null;
+        motionActive = false;
+        lastAnalyze = 0;
+        lastSentAt = 0;
+        lastMotionAt = 0;
+
+        if (motionRaf) cancelAnimationFrame(motionRaf);
+        motionRaf = requestAnimationFrame(motionLoop);
+
+        setStatus("Rastreamento ativo 🎯");
+        setTimeout(() => {
+          if ($("status").textContent === "Rastreamento ativo 🎯")
+            $("status").classList.add("hidden");
+        }, 2000);
+      }
+
+      function stopTracking() {
+        if (!trackingOn && !secondaryStream) return;
+        trackingOn = false;
+
+        if (motionRaf) {
+          cancelAnimationFrame(motionRaf);
+          motionRaf = null;
+        }
+        prevGray = null;
+        motionActive = false;
+        followerPos = null;
+        followerTarget = null;
+
+        if (secondaryStream) {
+          secondaryStream.getTracks().forEach((t) => {
+            try {
+              t.stop();
+            } catch {}
+          });
+          secondaryStream = null;
+        }
+
+        const v2 = $("localVideo2");
+        if (v2) {
+          v2.srcObject = null;
+          v2.style.display = "none";
+        }
+
+        const c = $("motionCanvas");
+        if (c) {
+          const g = c.getContext("2d");
+          g.clearRect(0, 0, c.width, c.height);
+          c.style.display = "none";
+        }
+
+        document.body.classList.remove("tracking");
+        $("trackBtn")?.classList.remove("on");
+        $("localVideo")?.classList.remove("motion");
+
+        if (motionChannel && motionChannel.readyState === "open") {
+          try {
+            motionChannel.send(
+              JSON.stringify({ type: "motion", active: false, level: 0 }),
+            );
+          } catch {}
+        }
+        setRemoteMotion(false);
+      }
+
+      window.toggleTracking = async () => {
+        if (!localStream) return;
+        if (trackingOn) {
+          stopTracking();
+          log("Rastreamento desligado", "l");
+          return;
+        }
+        try {
+          await startTracking();
+        } catch (e) {
+          log("❌ Rastreamento: " + e.message, "err");
+          stopTracking();
+        }
+      };
+
+      window.addEventListener("resize", () => {
+        if (trackingOn) {
+          sizeOverlay();
+          if (followerPos && followerTarget) {
+            const b = followerBounds();
+            followerPos.left = Math.min(
+              Math.max(followerPos.left, b.minLeft),
+              b.maxLeft,
+            );
+            followerPos.top = Math.min(
+              Math.max(followerPos.top, b.minTop),
+              b.maxTop,
+            );
+          }
+        }
+      });
+
+      // ── controles ─────────────────────────────────────────
+      window.toggleMic = () => {
+        if (!localStream) return;
+        const a = localStream.getAudioTracks()[0];
+        if (!a) return;
+        micEnabled = !micEnabled;
+        a.enabled = micEnabled;
+        $("micBtn").classList.toggle("off", !micEnabled);
+        log(micEnabled ? "🎤 Microfone ligado" : "🔇 Microfone desligado", "l");
+      };
+
+      window.switchCamera = async () => {
+        if (!localStream) return;
+        if (trackingOn) {
+          log("Rastreamento desligado para trocar de câmera", "warn");
+          stopTracking();
+        }
+        try {
+          await applyFacing(currentFacing === "user" ? "environment" : "user");
+        } catch (e) {
+          log("❌ " + e.message, "err");
+        }
+      };
+
+      window.hangUp = async () => {
+        if (hangingUp) return;
+        hangingUp = true;
+        clearTimeout(waitTimer);
+
+        const wasCaller = isCaller;
+        const wasRoom = roomRef;
+
+        stopTracking();
+        cleanupLocal();
+
+        if (wasRoom && db) {
+          try {
+            if (wasCaller) await remove(wasRoom);
+            else await remove(ref(db, `rooms/${ROOM}/answerer`));
           } catch {}
         }
 
-        pendingCandidates = [];
-        roomId = null;
-        isCaller = false;
-        answererSeen = false;
-
-        document.getElementById("remoteVideo").srcObject = null;
-        document.getElementById("localVideo").srcObject = null;
-        document.getElementById("call").style.display = "none";
-        document.getElementById("lobby").style.display = "flex";
-        document.getElementById("roomInput").value = "";
-        document.getElementById("createBtn").disabled = false;
-        document.getElementById("micBtn").classList.remove("off");
-        document.getElementById("status").classList.remove("hidden");
-        document.getElementById("status").textContent = "Preparando…";
+        $("remoteVideo").srcObject = null;
+        $("localVideo").srcObject = null;
+        $("localVideo2").srcObject = null;
+        $("call").style.display = "none";
+        $("lobby").style.display = "flex";
+        $("goBtn").disabled = false;
+        $("micBtn").classList.remove("off");
+        $("status").classList.add("hidden");
+        $("cancelWait").style.display = "none";
+        setLobbyStatus("");
         micEnabled = true;
-        logEl().innerHTML = "";
+        $("log").innerHTML = "";
 
         hangingUp = false;
       };
 
-      window.copyRoomCode = async () => {
-        if (!roomId) return;
-        try {
-          await navigator.clipboard.writeText(roomId);
-          alert("✅ Código copiado: " + roomId);
-        } catch {
-          prompt("Copie o código:", roomId);
-        }
-      };
-
-      /* ═══════════════════════════════════════════════════════════════
-         EXTRAS DE UX
-         ═══════════════════════════════════════════════════════════════ */
-      const roomInput = document.getElementById("roomInput");
-      roomInput.addEventListener("input", (e) => {
-        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      });
-      roomInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") window.joinRoom();
-      });
-
       window.addEventListener("beforeunload", () => {
+        stopTracking();
         try {
           if (pc) pc.close();
         } catch {}
         if (localStream) localStream.getTracks().forEach((t) => t.stop());
       });
-
-      /* ═══════════════════════════════════════════════════════════════
-         ANALYTICS (opcional — não quebra nada se falhar)
-         ═══════════════════════════════════════════════════════════════ */
-      import("https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js")
-        .then(async ({ getAnalytics, isSupported }) => {
-          if (await isSupported()) {
-            getAnalytics(app);
-            log("✓ Analytics ativo", "ok");
-          } else {
-            log("ℹ Analytics não suportado neste ambiente", "l");
-          }
-        })
-        .catch(() => log("ℹ Analytics indisponível (normal em file://)", "l"));
     </script>
   </body>
 </html>
