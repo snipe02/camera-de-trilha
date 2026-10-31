@@ -1,1305 +1,1261 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,user-scalable=no"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <title>Vídeo Chamada P2P</title>
+    <meta name="theme-color" content="#050505" />
+    <title>SegCam · Câmera de segurança P2P</title>
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --panel: #0a0a0a;
+        --border: #1a1a1a;
+        --fg: #0f0;
+        --dim: #888;
+        --red: #f33;
+        --warn: #fa0;
+      }
       * {
-        margin: 0;
-        padding: 0;
         box-sizing: border-box;
       }
+      html,
       body {
-        font-family:
-          system-ui,
-          -apple-system,
-          sans-serif;
-        background: #0a0e1a;
-        color: #fff;
-        height: 100vh;
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
       }
-      #lobby {
+
+      /* ---------- HEADER ---------- */
+      header {
+        padding: 10px 14px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
         display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+      }
+      header h1 {
+        font-size: 15px;
+        margin: 0;
+        color: var(--fg);
+      }
+      .st {
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: #111;
+        border: 1px solid #333;
+        font-size: 12px;
+        color: var(--dim);
+        white-space: nowrap;
+      }
+      .st.on {
+        color: var(--fg);
+        border-color: var(--fg);
+      }
+      .st.off {
+        color: var(--red);
+        border-color: var(--red);
+      }
+      .st.warn {
+        color: var(--warn);
+        border-color: var(--warn);
+      }
+      header .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
+      }
+
+      /* ---------- BUTTONS ---------- */
+      button {
+        padding: 8px 14px;
+        background: var(--fg);
+        color: #000;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        font-size: 12px;
+        transition: opacity 0.15s;
+      }
+      button:hover {
+        opacity: 0.85;
+      }
+      button:active {
+        transform: scale(0.98);
+      }
+      button.ghost {
+        background: #222;
+        color: var(--fg);
+        border: 1px solid #333;
+      }
+      button.danger {
+        background: var(--red);
+        color: #fff;
+      }
+      button.big {
+        padding: 22px 36px;
+        font-size: 17px;
+        border-radius: 10px;
+      }
+      button.secondary {
+        background: #222;
+        color: var(--fg);
+        border: 1px solid #444;
+      }
+
+      /* ---------- SCREENS ---------- */
+      main {
+        flex: 1;
+        display: none;
+        min-height: 0;
+        overflow: hidden;
+      }
+      main.active {
+        display: flex;
+      }
+
+      /* ---------- LANDING ---------- */
+      #screen-landing {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
         padding: 24px;
-        gap: 18px;
-      }
-      #lobby h1 {
-        font-size: 26px;
-        background: linear-gradient(135deg, #4f8cff, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-      }
-      #lobby p {
-        color: #8892b0;
-        font-size: 13px;
         text-align: center;
-        max-width: 340px;
+        gap: 16px;
+        overflow: auto;
+      }
+      #screen-landing .logo {
+        font-size: 80px;
+        line-height: 1;
+        filter: drop-shadow(0 0 20px #0f03);
+      }
+      #screen-landing h2 {
+        font-size: 34px;
+        margin: 0;
+        letter-spacing: -1px;
+      }
+      #screen-landing > p {
+        color: var(--dim);
+        max-width: 420px;
         line-height: 1.6;
+        margin: 0;
+        font-size: 14px;
       }
-      button {
-        padding: 14px 22px;
-        border: none;
-        border-radius: 12px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        color: #fff;
-        transition: all 0.15s;
+      .landing-btns {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 16px;
       }
-      button:active {
-        transform: scale(0.97);
-      }
-      button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-      .btn-primary {
-        background: linear-gradient(135deg, #4f8cff, #6366f1);
-      }
-      .btn-primary.big {
-        font-size: 17px;
-        padding: 20px 40px;
-        border-radius: 16px;
-        box-shadow: 0 8px 24px rgba(79, 140, 255, 0.3);
-      }
-      #lobbyStatus {
-        color: #8892b0;
-        font-size: 13px;
-        text-align: center;
-        max-width: 360px;
-        min-height: 20px;
+      .hint {
+        font-size: 11px;
+        color: #555;
+        margin-top: 28px;
+        max-width: 420px;
         line-height: 1.5;
       }
-      #cancelWait {
-        color: #4a5568;
-        font-size: 12px;
-        text-decoration: underline;
-        cursor: pointer;
-        display: none;
+
+      /* ---------- CAMERA ---------- */
+      #screen-camera {
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+        overflow: auto;
       }
-      #call {
-        display: none;
-        height: 100vh;
+      .camera-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 12px;
+        flex: 1;
+        min-height: 0;
+      }
+      @media (max-width: 900px) {
+        .camera-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      .preview {
         position: relative;
         background: #000;
-      }
-      #remoteVideo {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        background: #000;
-      }
-      #localVideo {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 100px;
-        height: 140px;
-        object-fit: cover;
-        border-radius: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        transform: scaleX(-1);
-        z-index: 10;
-        background: #111;
-        transition:
-          width 0.25s ease,
-          height 0.25s ease,
-          border-color 0.15s,
-          box-shadow 0.15s;
-      }
-      #localVideo.rear {
-        transform: none;
-      }
-      body.tracking #localVideo {
-        width: 132px;
-        height: 176px;
-      }
-      #localVideo.motion {
-        border-color: #ef4444;
-        box-shadow: 0 0 14px rgba(239, 68, 68, 0.9);
-      }
-
-      /* ── câmera frontal "seguidora" (PiP móvel) ── */
-      #localVideo2 {
-        position: absolute;
-        left: 16px;
-        top: 0;
-        width: 100px;
-        height: 134px;
-        object-fit: cover;
-        border-radius: 14px;
-        border: 2px solid rgba(168, 85, 247, 0.75);
-        z-index: 11;
-        background: #111;
-        display: none;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
-        will-change: left, top;
-      }
-
-      /* ── overlay do detector de movimento ── */
-      #motionCanvas {
-        position: absolute;
-        left: 0;
-        top: 0;
-        z-index: 12;
-        pointer-events: none;
-        border-radius: 14px;
-        display: none;
-      }
-
-      /* ── aviso de movimento vindo do outro lado ── */
-      #remoteMotion {
-        position: absolute;
-        inset: 0;
-        border: 4px solid rgba(239, 68, 68, 0.85);
-        border-radius: 6px;
-        pointer-events: none;
-        z-index: 9;
-      }
-      #remoteMotion::after {
-        content: "🔴 Movimento detectado do outro lado";
-        position: absolute;
-        top: 14px;
-        left: 14px;
-        background: rgba(239, 68, 68, 0.9);
-        color: #fff;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 6px 12px;
         border-radius: 8px;
-      }
-
-      #status {
-        position: absolute;
-        top: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.75);
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-size: 14px;
-        z-index: 10;
-        white-space: nowrap;
-        max-width: 90vw;
         overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      #controls {
-        position: absolute;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 12px;
-        z-index: 10;
-      }
-      .ctrl-btn {
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        cursor: pointer;
+        min-height: 260px;
+        border: 1px solid var(--border);
+      }
+      .preview video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+      .preview .overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        color: #fff;
+        text-shadow: 0 0 6px #000;
+      }
+      .preview .overlay .top {
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: bold;
+      }
+      .rec {
+        color: #f33;
+      }
+      .rec::before {
+        content: "● ";
+        animation: blink 1s infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .info-panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        overflow: auto;
+      }
+      .info-block label {
+        display: block;
+        font-size: 10px;
+        color: var(--dim);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .id-row {
+        display: flex;
+        gap: 6px;
+        align-items: stretch;
+      }
+      .id-row code {
+        flex: 1;
+        background: #000;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--fg);
+        word-break: break-all;
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        font-family: inherit;
+      }
+      .id-row button {
+        padding: 8px 12px;
+        font-size: 14px;
+        min-width: 44px;
+      }
+      .info-block.center {
+        text-align: center;
+      }
+      #camQr {
+        border-radius: 6px;
+        background: #fff;
+        padding: 8px;
+        display: inline-block;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .info-grid > div {
+        background: #000;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+      .info-grid label {
+        display: block;
+        font-size: 10px;
+        color: var(--dim);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .info-grid strong {
+        font-size: 22px;
+        color: var(--fg);
+        font-weight: bold;
+      }
+      .row-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: auto;
+      }
+      .row-actions button {
+        flex: 1;
+        min-width: 120px;
+      }
+
+      /* ---------- VIEWER ---------- */
+      #screen-viewer {
+        flex-direction: column;
         padding: 0;
       }
-      .ctrl-btn svg {
-        width: 22px;
-        height: 22px;
-        fill: #fff;
+      .viewer-layout {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
       }
-      .ctrl-btn.off {
-        background: rgba(239, 68, 68, 0.85);
+      .viewer-video-wrap {
+        position: relative;
+        flex: 1;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 0;
       }
-      .ctrl-btn.danger {
-        background: #ef4444;
+      .viewer-video-wrap video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
-      .ctrl-btn.on {
-        background: linear-gradient(135deg, #4f8cff, #a855f7);
-        box-shadow: 0 0 16px rgba(168, 85, 247, 0.65);
-      }
-      #log {
+      .viewer-video-wrap .overlay {
         position: absolute;
-        bottom: 0;
+        top: 0;
         left: 0;
         right: 0;
-        max-height: 35vh;
-        overflow-y: auto;
-        background: rgba(0, 0, 0, 0.85);
-        padding: 10px 14px;
-        font-family: ui-monospace, monospace;
-        font-size: 11px;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        text-shadow: 0 0 6px #000;
+        pointer-events: none;
+        color: #fff;
+        background: linear-gradient(#000a, transparent);
+        z-index: 2;
+      }
+      .viewer-video-wrap .overlay #viewerCamId {
+        font-weight: bold;
+        background: #000a;
+        padding: 4px 10px;
+        border-radius: 4px;
+      }
+      .viewer-video-wrap .overlay #viewerTime {
+        background: #000a;
+        padding: 4px 10px;
+        border-radius: 4px;
+      }
+      .placeholder {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--dim);
+        text-align: center;
+        padding: 24px;
+        font-size: 13px;
         line-height: 1.6;
-        z-index: 20;
-        border-top: 1px solid #222;
-        transition: max-height 0.2s;
+        z-index: 1;
       }
-      #log.collapsed {
-        max-height: 26px;
-        overflow: hidden;
+      .placeholder code {
+        color: var(--fg);
+        background: #111;
+        padding: 2px 6px;
+        border-radius: 4px;
       }
-      #log .l {
-        color: #8a93a6;
+      .viewer-bar {
+        padding: 12px 16px;
+        background: var(--panel);
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex-shrink: 0;
       }
-      #log .ok {
-        color: #10b981;
+      .viewer-bar .id-row input {
+        flex: 1;
+        padding: 11px 14px;
+        background: #000;
+        border: 1px solid var(--border);
+        color: var(--fg);
+        border-radius: 6px;
+        font: inherit;
+        font-size: 13px;
+        min-width: 0;
       }
-      #log .err {
-        color: #f87171;
+      .viewer-bar .id-row input:focus {
+        outline: none;
+        border-color: var(--fg);
       }
-      #log .warn {
-        color: #fbbf24;
+      .viewer-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
       }
-      #log .step {
-        color: #60a5fa;
-        font-weight: 600;
+      .viewer-actions button {
+        flex: 1;
+        min-width: 110px;
       }
-      .hidden {
-        display: none !important;
+
+      /* ---------- TOAST ---------- */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--fg);
+        color: #000;
+        padding: 10px 22px;
+        border-radius: 6px;
+        font-weight: bold;
+        font-size: 13px;
+        animation: slideIn 0.2s ease;
+        z-index: 1000;
+        box-shadow: 0 4px 20px #0f05;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translate(-50%, 20px);
+          opacity: 0;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="lobby">
-      <h1>📹 Vídeo Chamada P2P</h1>
-      <p>
-        Aperte o botão. A conexão é automática entre duas pessoas — sem código.
-        Abra em dois dispositivos e aperte nos dois. Dentro da chamada use o
-        botão 🎯 para ativar o rastreamento de movimento.
-      </p>
-      <button class="btn-primary big" id="goBtn" onclick="go()">
-        📞 Entrar na Chamada
-      </button>
-      <div id="lobbyStatus"></div>
-      <span id="cancelWait" onclick="cancelWait()">cancelar espera</span>
-    </div>
-
-    <div id="call">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <video id="localVideo" autoplay playsinline muted></video>
-      <video id="localVideo2" autoplay playsinline muted></video>
-      <canvas id="motionCanvas"></canvas>
-      <div id="remoteMotion" class="hidden"></div>
-      <div id="status">Preparando…</div>
-      <div id="controls">
-        <button class="ctrl-btn" id="micBtn" onclick="toggleMic()">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
-            />
-            <path
-              d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn" id="switchBtn" onclick="switchCamera()">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
-            />
-          </svg>
-        </button>
-        <button
-          class="ctrl-btn"
-          id="trackBtn"
-          onclick="toggleTracking()"
-          title="Rastreamento de movimento"
-        >
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-13c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn danger" onclick="hangUp()" title="Encerrar">
-          <svg viewBox="0 0 24 24">
-            <path
-              d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"
-            />
-          </svg>
-        </button>
-        <button class="ctrl-btn" onclick="toggleLog()" title="Log">
-          <svg viewBox="0 0 24 24">
-            <path d="M3 5h18v2H3zm0 6h18v2H3zm0 6h12v2H3z" />
-          </svg>
+    <header>
+      <h1>📷 SegCam</h1>
+      <span id="status" class="st off">○ idle</span>
+      <div class="actions">
+        <button id="btnHome" class="ghost" style="display: none">
+          ← Início
         </button>
       </div>
-      <div id="log" class="collapsed"></div>
-    </div>
+    </header>
 
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import {
-        getDatabase,
-        ref,
-        set,
-        push,
-        update,
-        onValue,
-        onChildAdded,
-        remove,
-        onDisconnect,
-        get,
-        runTransaction,
-      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    <!-- ====================== LANDING ====================== -->
+    <main id="screen-landing" class="active">
+      <div class="logo">📷</div>
+      <h2>SegCam</h2>
+      <p>
+        Transmita a webcam de qualquer dispositivo para outro, em tempo real.<br />Funciona
+        entre redes diferentes. Sem instalar nada.
+      </p>
+      <div class="landing-btns">
+        <button id="btnBeCamera" class="big primary">🎥 Transmitir</button>
+        <button id="btnBeViewer" class="big secondary">👁️ Assistir</button>
+      </div>
+      <p class="hint">
+        ⚠ A câmera precisa de <b>HTTPS</b> (ou <b>localhost</b>) para acessar a
+        webcam.<br />
+        Hospede este arquivo em qualquer serviço estático (Netlify, Vercel,
+        GitHub Pages…) e abra via HTTPS.
+      </p>
+    </main>
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
-        authDomain: "trader-b13c9.firebaseapp.com",
-        databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com",
-        projectId: "trader-b13c9",
-        storageBucket: "trader-b13c9.firebasestorage.app",
-        messagingSenderId: "127165287666",
-        appId: "1:127165287666:web:9b89e35bfb3fbb0ba1546b",
-        measurementId: "G-TM60VT87GY",
-      };
+    <!-- ====================== CAMERA ====================== -->
+    <main id="screen-camera">
+      <div class="camera-layout">
+        <div class="preview">
+          <video id="camPreview" autoplay playsinline muted></video>
+          <div class="overlay">
+            <div class="top">
+              <span class="rec">REC</span>
+              <span id="camTime">--:--:--</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-panel">
+          <div class="info-block">
+            <label>Seu ID (compartilhe com quem vai assistir)</label>
+            <div class="id-row">
+              <code id="camId">—</code>
+              <button class="ghost" onclick="copyId()">📋</button>
+            </div>
+          </div>
+          <div class="info-block">
+            <label>Link para assistir</label>
+            <div class="id-row">
+              <code id="camLink" style="font-size: 10px">—</code>
+              <button class="ghost" onclick="copyLink()">📋</button>
+            </div>
+          </div>
+          <div class="info-block center">
+            <img
+              id="camQr"
+              alt="QR code"
+              width="180"
+              height="180"
+              style="visibility: hidden"
+            />
+          </div>
+          <div class="info-grid">
+            <div>
+              <label>Visualizadores</label><strong id="camViewers">0</strong>
+            </div>
+            <div><label>FPS</label><strong id="camFps">—</strong></div>
+          </div>
+          <div class="row-actions">
+            <button
+              id="btnSwitchCam"
+              class="ghost"
+              style="display: none"
+              onclick="switchCamera()"
+            >
+              🔄 Trocar câmera
+            </button>
+            <button class="danger" onclick="stopCamera()">■ Parar</button>
+          </div>
+        </div>
+      </div>
+    </main>
 
-      let db = null;
-      try {
-        const app = initializeApp(firebaseConfig);
-        db = getDatabase(app);
-      } catch (e) {
-        console.error("Firebase init:", e);
-      }
+    <!-- ====================== VIEWER ====================== -->
+    <main id="screen-viewer">
+      <div class="viewer-layout">
+        <div class="viewer-video-wrap">
+          <video id="viewerVideo" autoplay playsinline muted></video>
+          <div id="viewerPlaceholder" class="placeholder">
+            <div>Digite o ID da câmera abaixo e clique em <b>Conectar</b>.</div>
+          </div>
+          <div class="overlay">
+            <span id="viewerCamId">—</span>
+            <span id="viewerTime">--:--:--</span>
+          </div>
+        </div>
+        <div class="viewer-bar">
+          <div class="id-row">
+            <input
+              id="viewerInput"
+              placeholder="ID da câmera (ex.: segcam-a3b7x9k2)"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+            />
+            <button onclick="connectViewer()">Conectar</button>
+          </div>
+          <div class="viewer-actions">
+            <button class="ghost" onclick="toggleMute()" id="btnMute">
+              🔊 Ativar som
+            </button>
+            <button class="ghost" onclick="snapshotViewer()">
+              📸 Snapshot
+            </button>
+            <button class="ghost" onclick="fullscreenViewer()">
+              ⛶ Tela cheia
+            </button>
+            <button class="danger" onclick="disconnectViewer()">
+              ■ Desconectar
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
 
-      const ROOM = "principal"; // sala fixa (todos caem nela)
-      const STALE_MS = 5 * 60 * 1000; // oferta sem resposta expira em 5min
-
-      const rtcConfig = {
-        iceServers: [
-          { urls: "stun:stun.l.google.com:19302" },
-          { urls: "stun:stun1.l.google.com:19302" },
-          { urls: "stun:stun.cloudflare.com:3478" },
-          {
-            urls: "turn:openrelay.metered.ca:80",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-          {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-          {
-            urls: "turn:openrelay.metered.ca:443?transport=tcp",
-            username: "openrelayproject",
-            credential: "openrelayproject",
-          },
-        ],
-      };
-
-      // ── estado ────────────────────────────────────────────
-      let pc = null;
-      let localStream = null;
-      let currentFacing = "user";
-      let micEnabled = true;
-      let unsubs = [];
-      let pendingCandidates = [];
-      let isCaller = false;
-      let hangingUp = false;
-      let answererSeen = false;
-      let roomRef = null;
-      let waitTimer = null;
-
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <script>
       /* ============================================================
-         ESTADO DO RASTREAMENTO / DETECÇÃO DE MOVIMENTO
-         ============================================================ */
-      let trackingOn = false; // modo rastreamento ativo?
-      let secondaryStream = null; // câmera frontal (a que "segue")
-      let motionRaf = null; // requestAnimationFrame do loop
-      let prevGray = null; // frame anterior (escala de cinza)
-      let motionActive = false; // há movimento agora?
-      let lastMotionAt = 0; // timestamp do último movimento
-      let lastAnalyze = 0; // throttle da análise
-      let lastSentAt = 0; // throttle do envio ao peer
-      let motionChannel = null; // DataChannel p/ avisar o outro lado
+   SegCam — câmera de segurança P2P (arquivo único)
+   - WebRTC ponto-a-ponto via PeerJS (sinalização pela nuvem)
+   - Sem servidor próprio: câmera e visualizadores em qualquer rede
+   ============================================================ */
 
-      // posição suavizada do PiP seguidor
-      let followerPos = null;
-      let followerTarget = null;
+      /* ---------------- CONFIG ---------------- */
+      const PEER_PREFIX = "segcam-";
+      const QR_API =
+        "https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=4&data=";
 
-      const MOTION_MIN_RATIO = 0.02; // 2% dos pixels mudando = movimento
-      const MOTION_PIXEL_DIFF = 24; // diferença mínima de luminância
-      const MOTION_HOLD_MS = 900; // histerese (evita piscar)
-      const MW = 96; // largura da grade de análise
-      const MH = 72; // altura da grade de análise
-      const FOLLOW_W = 100; // largura do PiP seguidor (igual ao CSS)
-      const FOLLOW_H = 134; // altura do PiP seguidor (igual ao CSS)
+      /* ---------------- ESTADO ---------------- */
+      const S = {
+        mode: null, // 'camera' | 'viewer' | null
+        peer: null, // instância PeerJS
+        localStream: null, // stream da webcam (modo câmera)
+        ownId: null, // ID do peer (modo câmera)
+        calls: new Map(), // peerId -> MediaConnection
+        remoteStreams: new Map(),
+        videoDevices: [],
+        deviceIdx: 0,
+        starting: false,
+        manuallyDisconnected: false,
+      };
 
-      const $ = (id) => document.getElementById(id);
+      /* ---------------- UTIL ---------------- */
+      const $ = (s) => document.querySelector(s);
 
-      // canvas oculto só para análise
-      const analysisCanvas = document.createElement("canvas");
-      analysisCanvas.width = MW;
-      analysisCanvas.height = MH;
-      const actx = analysisCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
-
-      function log(msg, cls = "l") {
-        const el = $("log");
-        if (el) {
-          const line = document.createElement("div");
-          line.className = cls;
-          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-          el.appendChild(line);
-          el.scrollTop = el.scrollHeight;
+      function el(tag, attrs = {}, ...children) {
+        const e = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "class") e.className = v;
+          else if (k === "style") e.style.cssText = v;
+          else if (k.startsWith("on"))
+            e.addEventListener(k.slice(2).toLowerCase(), v);
+          else e.setAttribute(k, v);
         }
-        console.log(`[${cls}]`, msg);
-      }
-      window.toggleLog = () => $("log").classList.toggle("collapsed");
-      function setLobbyStatus(t) {
-        $("lobbyStatus").textContent = t || "";
-      }
-      function setStatus(t) {
-        const el = $("status");
-        el.textContent = t;
-        el.classList.remove("hidden");
-      }
-      function markConnected() {
-        setStatus("Conectado ✓");
-        setTimeout(() => {
-          const el = $("status");
-          if (el.textContent === "Conectado ✓") el.classList.add("hidden");
-        }, 2500);
+        for (const c of children)
+          e.append(c instanceof Node ? c : document.createTextNode(c));
+        return e;
       }
 
-      // ── câmera com fallback ───────────────────────────────
-      async function startCamera(facing = "user") {
-        if (!navigator.mediaDevices?.getUserMedia)
-          throw new Error("Câmera indisponível — use HTTPS ou localhost");
-        try {
-          return await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: facing },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-            audio: { echoCancellation: true, noiseSuppression: true },
-          });
-        } catch (e1) {
-          log(
-            `⚠ facingMode falhou (${e1.name}), tentando câmera padrão`,
-            "warn",
-          );
-          try {
-            return await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: true,
-            });
-          } catch (e2) {
-            if (
-              e2.name === "NotFoundError" ||
-              e2.name === "DevicesNotFoundError"
-            )
-              throw new Error(
-                "Nenhuma câmera/microfone encontrado. Conecte um dispositivo e tente de novo.",
-              );
-            if (e2.name === "NotAllowedError" || e2.name === "SecurityError")
-              throw new Error(
-                "Permissão de câmera negada. Libere nas configurações do navegador.",
-              );
-            if (e2.name === "NotReadableError")
-              throw new Error(
-                "Câmera em uso por outro aplicativo. Feche-o e tente novamente.",
-              );
-            throw new Error("Erro de mídia: " + e2.name + " — " + e2.message);
-          }
-        }
+      function setStatus(text, cls = "off") {
+        const s = $("#status");
+        s.textContent = text;
+        s.className = "st " + cls;
       }
 
-      // ── ICE ───────────────────────────────────────────────
-      async function addCandidate(c) {
-        if (!pc) return;
-        if (pc.remoteDescription && pc.remoteDescription.type) {
-          try {
-            await pc.addIceCandidate(c);
-            log("✓ ICE add", "ok");
-          } catch (e) {
-            log("⚠ ICE fail: " + e.message, "warn");
-          }
-        } else {
-          pendingCandidates.push(c);
-          log(`⏸ ICE na fila (${pendingCandidates.length})`, "warn");
-        }
-      }
-      async function flushCandidates() {
-        if (!pc) return;
-        if (pendingCandidates.length)
-          log(`▶ Liberando ${pendingCandidates.length} candidatos`, "step");
-        for (const c of pendingCandidates) {
-          try {
-            await pc.addIceCandidate(c);
-          } catch (e) {
-            log("⚠ " + e.message, "warn");
-          }
-        }
-        pendingCandidates = [];
+      function showScreen(name) {
+        document
+          .querySelectorAll("main")
+          .forEach((m) => m.classList.remove("active"));
+        const target = $("#screen-" + name);
+        if (target) target.classList.add("active");
+        $("#btnHome").style.display =
+          name === "landing" ? "none" : "inline-block";
+        S.mode = name === "landing" ? null : name;
+        history.replaceState(null, "", location.pathname);
       }
 
-      // ── canal de dados p/ avisar movimento ao outro lado ──
-      function setupMotionChannel(ch) {
-        motionChannel = ch;
-        ch.onopen = () => log("✓ Canal de movimento aberto", "ok");
-        ch.onclose = () => {
-          if (motionChannel === ch) motionChannel = null;
-        };
-        ch.onerror = () => {};
-        ch.onmessage = (ev) => {
-          try {
-            const msg = JSON.parse(ev.data);
-            if (msg.type === "motion") setRemoteMotion(!!msg.active);
-          } catch {}
-        };
+      function toast(msg) {
+        const t = el("div", { class: "toast" }, msg);
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
       }
 
-      let remoteMotionTimer = null;
-      function setRemoteMotion(active) {
-        const el = $("remoteMotion");
-        if (!el) return;
-        el.classList.toggle("hidden", !active);
-        clearTimeout(remoteMotionTimer);
-        if (active) {
-          remoteMotionTimer = setTimeout(() => setRemoteMotion(false), 1600);
-        }
+      function copyText(text) {
+        if (!text) return;
+        navigator.clipboard
+          .writeText(text)
+          .then(() => toast("📋 Copiado!"))
+          .catch(() => toast("Não foi possível copiar"));
       }
 
-      function sendMotion(active, level) {
-        if (!motionChannel || motionChannel.readyState !== "open") return;
-        try {
-          motionChannel.send(
-            JSON.stringify({
-              type: "motion",
-              active,
-              level: Math.min(1, (level || 0) * 5),
-            }),
-          );
-        } catch {}
+      function shortRandom(n = 8) {
+        const c = "abcdefghjkmnpqrstuvwxyz23456789";
+        let s = "";
+        for (let i = 0; i < n; i++)
+          s += c[Math.floor(Math.random() * c.length)];
+        return s;
       }
 
-      // ── peer connection ───────────────────────────────────
-      function newPeer() {
-        pc = new RTCPeerConnection(rtcConfig);
-
-        pc.onicecandidate = (e) => {
-          if (e.candidate && roomRef) {
-            const path = isCaller ? "callerCandidates" : "answererCandidates";
-            push(ref(db, `rooms/${ROOM}/${path}`), e.candidate.toJSON());
-            log("→ ICE enviado", "l");
-          }
-        };
-
-        pc.ontrack = (e) => {
-          log("🎥 Vídeo remoto chegou!", "ok");
-          const rv = $("remoteVideo");
-          rv.srcObject = e.streams[0];
-          rv.play().catch(() => {
-            log("⚠ Autoplay bloqueado — toque na tela", "warn");
-            document.body.addEventListener(
-              "click",
-              () => rv.play().catch(() => {}),
-              { once: true },
-            );
-          });
-          markConnected();
-        };
-
-        pc.oniceconnectionstatechange = () => {
-          if (!pc) return;
-          const st = pc.iceConnectionState;
-          log("ICE state: " + st, st === "failed" ? "err" : "l");
-          if (st === "connected" || st === "completed") markConnected();
-          if (st === "failed") setStatus("Falha de conexão (NAT?)");
-        };
-        return pc;
-      }
-
-      function showCall() {
-        $("lobby").style.display = "none";
-        $("call").style.display = "block";
-        $("localVideo").srcObject = localStream;
-        $("localVideo").classList.toggle(
-          "rear",
-          currentFacing === "environment",
+      function makeWatchLink() {
+        if (!S.ownId) return "";
+        return (
+          location.origin +
+          location.pathname +
+          "?watch=" +
+          encodeURIComponent(S.ownId)
         );
       }
 
-      function cleanupLocal() {
-        stopTracking(); // garante que a 2ª câmera/loop morrem junto
-        unsubs.forEach((u) => {
-          try {
-            u();
-          } catch {}
-        });
-        unsubs = [];
-        if (motionChannel) {
-          try {
-            motionChannel.close();
-          } catch {}
-          motionChannel = null;
-        }
-        if (pc) {
-          try {
-            pc.close();
-          } catch {}
-          pc = null;
-        }
-        if (localStream) {
-          localStream.getTracks().forEach((t) => {
-            try {
-              t.stop();
-            } catch {}
-          });
-          localStream = null;
-        }
-        pendingCandidates = [];
-        answererSeen = false;
-        isCaller = false;
-        roomRef = null;
+      function updateTime() {
+        const now = new Date().toLocaleString("pt-BR", { hour12: false });
+        const a = $("#camTime"),
+          b = $("#viewerTime");
+        if (a) a.textContent = now;
+        if (b) b.textContent = now;
       }
 
-      // ── entrada: 1 botão decide sozinho ───────────────────
-      window.go = async () => {
-        if (!db) return alert("Firebase não inicializado");
-        if (hangingUp) return;
-        $("goBtn").disabled = true;
-        $("cancelWait").style.display = "none";
+      /* ---------------- FPS ---------------- */
+      function startFps(video, labelEl) {
+        if (!video || !video.requestVideoFrameCallback || !labelEl) return;
+        let frames = 0,
+          last = performance.now();
+        const tick = () => {
+          frames++;
+          const now = performance.now();
+          if (now - last >= 1000) {
+            labelEl.textContent = frames.toFixed(0);
+            frames = 0;
+            last = now;
+          }
+          if (video.isConnected) video.requestVideoFrameCallback(tick);
+        };
+        video.requestVideoFrameCallback(tick);
+      }
+
+      /* ============================================================
+   MODO CÂMERA (transmissor)
+   ============================================================ */
+      async function startCameraMode() {
+        if (S.starting) return;
+        S.starting = true;
+        showScreen("camera");
+        setStatus("○ iniciando…", "warn");
+
         try {
-          roomRef = ref(db, `rooms/${ROOM}`);
-          const snap = await get(roomRef);
-          const data = snap.val();
-          const now = Date.now();
-          const hasOffer = data && data.offer;
-          const hasAnswer = data && data.answer;
-          const stale = !data || now - (data.createdAt || 0) > STALE_MS;
-          const active = hasOffer && hasAnswer; // chamada em andamento
-          const waiting = hasOffer && !hasAnswer && !stale; // alguém esperando
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("Este navegador não suporta acesso à câmera.");
+          }
+          if (
+            location.protocol !== "https:" &&
+            location.hostname !== "localhost" &&
+            location.hostname !== "127.0.0.1"
+          ) {
+            throw new Error(
+              "A câmera exige HTTPS. Abra o arquivo via https:// ou localhost.",
+            );
+          }
 
-          log(
-            `Sala: existe=${!!data} offer=${!!hasOffer} answer=${!!hasAnswer} stale=${stale}`,
-            "l",
+          /* 1. lista de câmeras disponíveis */
+          const all = await navigator.mediaDevices.enumerateDevices();
+          S.videoDevices = all.filter((d) => d.kind === "videoinput");
+          $("#btnSwitchCam").style.display =
+            S.videoDevices.length > 1 ? "inline-block" : "none";
+
+          /* 2. abre a webcam */
+          await openLocalStream();
+          const preview = $("#camPreview");
+          preview.srcObject = S.localStream;
+          try {
+            await preview.play();
+          } catch {}
+
+          /* 3. cria peer com ID único */
+          const created = await createPeerWithId();
+          S.peer = created.peer;
+          S.ownId = created.id;
+
+          /* 4. aceita conexões de visualizadores */
+          S.peer.on("call", (call) => {
+            call.answer(S.localStream);
+            S.calls.set(call.peer, call);
+            updateViewerCount();
+            call.on("close", () => {
+              S.calls.delete(call.peer);
+              updateViewerCount();
+            });
+            call.on("error", () => {
+              S.calls.delete(call.peer);
+              updateViewerCount();
+            });
+          });
+
+          S.peer.on("disconnected", () => {
+            setStatus("○ reconectando…", "warn");
+            try {
+              S.peer.reconnect();
+            } catch {}
+          });
+
+          S.peer.on("error", (err) => {
+            console.error("[peer]", err);
+            if (err.type === "unavailable-id") {
+              toast("ID ocupado, gerando outro…");
+              restartCameraId();
+            } else if (err.type === "network" || err.type === "server-error") {
+              setStatus("⚠ servidor PeerJS indisponível", "off");
+            }
+          });
+
+          /* 5. UI */
+          renderCameraUI();
+          setStatus("● ao vivo", "on");
+          startFps(preview, $("#camFps"));
+        } catch (e) {
+          console.error(e);
+          setStatus("⚠ " + (e.message || "erro"), "off");
+          const preview = $("#camPreview");
+          if (preview) preview.srcObject = null;
+          $("#viewerPlaceholder");
+          const placeholder = el(
+            "div",
+            { class: "placeholder" },
+            el(
+              "div",
+              {},
+              "❌ ",
+              e.message || "Erro ao iniciar câmera",
+              el("br"),
+              el("br"),
+              el(
+                "span",
+                { style: "font-size:11px;color:#666" },
+                "Verifique se você concedeu permissão e se está em HTTPS.",
+              ),
+            ),
           );
+          const wrap = document.querySelector("#screen-camera .preview");
+          if (wrap && !wrap.querySelector(".err")) {
+            placeholder.classList.add("err");
+            wrap.appendChild(placeholder);
+          }
+        } finally {
+          S.starting = false;
+        }
+      }
 
-          // caso 1: chamada ativa → espera (sem abrir câmera)
-          if (active) {
-            setLobbyStatus("Sala ocupada — aguardando o outro sair…");
-            $("cancelWait").style.display = "inline";
-            clearTimeout(waitTimer);
-            waitTimer = setTimeout(() => {
-              go();
-            }, 3000);
+      async function openLocalStream() {
+        if (S.localStream) {
+          S.localStream.getTracks().forEach((t) => t.stop());
+          S.localStream = null;
+        }
+        const dev = S.videoDevices[S.deviceIdx];
+        const constraints = {
+          audio: true,
+          video:
+            dev && dev.deviceId
+              ? {
+                  deviceId: { exact: dev.deviceId },
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                }
+              : {
+                  facingMode: "environment",
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                },
+        };
+        S.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+
+      async function createPeerWithId(attempt = 0) {
+        if (attempt > 4)
+          throw new Error("Não foi possível registrar um ID único.");
+        const id = PEER_PREFIX + shortRandom(8);
+        const peer = new Peer(id);
+        try {
+          await new Promise((resolve, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error("timeout ao conectar ao servidor PeerJS")),
+              15000,
+            );
+            peer.once("open", () => {
+              clearTimeout(timer);
+              resolve();
+            });
+            peer.once("error", (err) => {
+              clearTimeout(timer);
+              reject(err);
+            });
+          });
+          return { peer, id };
+        } catch (err) {
+          try {
+            peer.destroy();
+          } catch {}
+          if (err.type === "unavailable-id")
+            return createPeerWithId(attempt + 1);
+          throw err;
+        }
+      }
+
+      function renderCameraUI() {
+        const idEl = $("#camId");
+        const linkEl = $("#camLink");
+        const qrEl = $("#camQr");
+        idEl.textContent = S.ownId;
+        const link = makeWatchLink();
+        linkEl.textContent = link;
+        qrEl.src = QR_API + encodeURIComponent(link);
+        qrEl.style.visibility = "visible";
+      }
+
+      function updateViewerCount() {
+        const el = $("#camViewers");
+        if (el) el.textContent = S.calls.size;
+      }
+
+      async function switchCamera() {
+        if (S.videoDevices.length < 2) return;
+        S.deviceIdx = (S.deviceIdx + 1) % S.videoDevices.length;
+        try {
+          await openLocalStream();
+          const preview = $("#camPreview");
+          preview.srcObject = S.localStream;
+          try {
+            await preview.play();
+          } catch {}
+          // substitui o stream nas chamadas ativas
+          for (const call of S.calls.values()) {
+            try {
+              const pc = call.peerConnection;
+              if (!pc) continue;
+              const sender = pc
+                .getSenders()
+                .find((s) => s.track && s.track.kind === "video");
+              if (sender)
+                await sender.replaceTrack(S.localStream.getVideoTracks()[0]);
+            } catch (e) {
+              console.warn("switch cam", e);
+            }
+          }
+          toast("🔄 Câmera trocada");
+        } catch (e) {
+          toast("Erro ao trocar: " + e.message);
+        }
+      }
+
+      async function restartCameraId() {
+        // Chamado em caso de colisão de ID
+        try {
+          const preview = $("#camPreview");
+          if (S.peer) {
+            try {
+              S.peer.destroy();
+            } catch {}
+            S.peer = null;
+          }
+          S.calls.clear();
+          const created = await createPeerWithId();
+          S.peer = created.peer;
+          S.ownId = created.id;
+          S.peer.on("call", (call) => {
+            call.answer(S.localStream);
+            S.calls.set(call.peer, call);
+            updateViewerCount();
+            call.on("close", () => {
+              S.calls.delete(call.peer);
+              updateViewerCount();
+            });
+            call.on("error", () => {
+              S.calls.delete(call.peer);
+              updateViewerCount();
+            });
+          });
+          renderCameraUI();
+          setStatus("● ao vivo", "on");
+        } catch (e) {
+          setStatus("⚠ " + e.message, "off");
+        }
+      }
+
+      function stopCamera() {
+        if (S.localStream) {
+          S.localStream.getTracks().forEach((t) => t.stop());
+          S.localStream = null;
+        }
+        for (const call of S.calls.values()) {
+          try {
+            call.close();
+          } catch {}
+        }
+        S.calls.clear();
+        if (S.peer) {
+          try {
+            S.peer.destroy();
+          } catch {}
+          S.peer = null;
+        }
+        S.ownId = null;
+        const preview = $("#camPreview");
+        if (preview) preview.srcObject = null;
+        const err = document.querySelector("#screen-camera .preview .err");
+        if (err) err.remove();
+        setStatus("○ idle", "off");
+        showScreen("landing");
+      }
+
+      function copyId() {
+        copyText(S.ownId || "");
+      }
+      function copyLink() {
+        copyText(makeWatchLink());
+      }
+
+      /* ============================================================
+   MODO VISUALIZADOR
+   ============================================================ */
+      async function startViewerMode(autoId) {
+        showScreen("viewer");
+        setStatus("○ aguardando", "off");
+        S.manuallyDisconnected = false;
+
+        if (autoId) {
+          $("#viewerInput").value = autoId;
+          await connectViewer();
+        } else {
+          $("#viewerPlaceholder").innerHTML =
+            "<div>Digite o ID da câmera abaixo e clique em <b>Conectar</b>.</div>";
+          $("#viewerCamId").textContent = "—";
+        }
+      }
+
+      async function ensureViewerPeer() {
+        if (S.peer && !S.peer.destroyed) return S.peer;
+        setStatus("○ conectando ao servidor…", "warn");
+        const peer = new Peer();
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error("timeout ao conectar ao servidor PeerJS")),
+            15000,
+          );
+          peer.once("open", () => {
+            clearTimeout(timer);
+            resolve();
+          });
+          peer.once("error", (err) => {
+            clearTimeout(timer);
+            reject(err);
+          });
+        });
+        peer.on("error", onViewerPeerError);
+        S.peer = peer;
+        return peer;
+      }
+
+      function onViewerPeerError(err) {
+        if (err.type === "peer-unavailable") {
+          const m = /segcam-[a-z0-9]+/i.exec(err.message || "");
+          const pid = m ? m[0] : "?";
+          setStatus("⚠ câmera não encontrada", "off");
+          $("#viewerPlaceholder").style.display = "grid";
+          $("#viewerPlaceholder").innerHTML =
+            "<div>❌ Câmera <code>" +
+            pid +
+            "</code> não encontrada.<br>" +
+            '<span style="font-size:11px;color:#666">Verifique se a câmera está transmitindo e se o ID está correto.</span></div>';
+        } else if (err.type === "network" || err.type === "server-error") {
+          setStatus("⚠ servidor PeerJS indisponível", "off");
+        } else {
+          console.warn("[peer viewer]", err);
+        }
+      }
+
+      async function connectViewer() {
+        const input = $("#viewerInput");
+        const raw = (input.value || "").trim().toLowerCase();
+        if (!raw) {
+          toast("Digite o ID da câmera");
+          input.focus();
+          return;
+        }
+
+        // aceita ID puro, link completo, ou só o sufixo
+        let remoteId = raw;
+        try {
+          const u = new URL(raw, location.href);
+          const p = u.searchParams.get("watch");
+          if (p) remoteId = p;
+        } catch {}
+        if (!remoteId.startsWith(PEER_PREFIX))
+          remoteId = PEER_PREFIX + remoteId;
+
+        S.manuallyDisconnected = false;
+        setStatus("○ conectando…", "warn");
+        $("#viewerPlaceholder").style.display = "grid";
+        $("#viewerPlaceholder").innerHTML =
+          "<div>Conectando à câmera <code>" + remoteId + "</code>…</div>";
+
+        try {
+          const peer = await ensureViewerPeer();
+
+          // se já existe uma chamada antiga com esse peer, fecha
+          const old = S.calls.get(remoteId);
+          if (old) {
+            try {
+              old.close();
+            } catch {}
+            S.calls.delete(remoteId);
+          }
+
+          const call = peer.call(remoteId, new MediaStream());
+          if (!call) {
+            setStatus("⚠ falha ao iniciar chamada", "off");
             return;
           }
+          S.calls.set(remoteId, call);
 
-          // caso 2: livre → precisa de câmera
-          if (!localStream) {
-            setLobbyStatus("Preparando câmera…");
-            localStream = await startCamera(currentFacing);
-            log("✓ Câmera ok", "ok");
-          }
-          showCall();
-
-          if (waiting) {
-            log("→ Entrando como participante 2", "step");
-            await startAnswerer(data.offer);
-          } else {
-            log("→ Entrando como participante 1", "step");
-            await tryBecomeCaller();
-          }
-        } catch (e) {
-          log("❌ " + e.message, "err");
-          setLobbyStatus("❌ " + e.message);
-          $("goBtn").disabled = false;
-        }
-      };
-
-      window.cancelWait = () => {
-        clearTimeout(waitTimer);
-        $("cancelWait").style.display = "none";
-        setLobbyStatus("");
-        $("goBtn").disabled = false;
-      };
-
-      // ── virar "chamador" (com trava pra evitar corrida) ──
-      async function tryBecomeCaller() {
-        isCaller = true;
-        newPeer();
-        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-
-        // cria o canal de dados ANTES da offer (assim ele é negociado junto)
-        try {
-          setupMotionChannel(pc.createDataChannel("motion", { ordered: true }));
-        } catch (e) {
-          log("⚠ DataChannel indisponível: " + e.message, "warn");
-        }
-
-        const offer = await pc.createOffer();
-        const offerObj = { type: offer.type, sdp: offer.sdp };
-
-        const txRes = await runTransaction(roomRef, (current) => {
-          if (current && current.offer && current.answer) return; // ativa → abort
-          const cStale =
-            !current || Date.now() - (current.createdAt || 0) > STALE_MS;
-          if (current && current.offer && !cStale) return; // alguém esperando → abort
-          return { createdAt: Date.now(), offer: offerObj };
-        });
-
-        if (!txRes.committed) {
-          log("⚠ Alguém chegou primeiro, reavaliando…", "warn");
-          if (pc) {
-            try {
-              pc.close();
-            } catch {}
-            pc = null;
-          }
-          return go();
-        }
-
-        log("✓ Sala reservada com offer", "ok");
-        onDisconnect(roomRef).remove();
-        await pc.setLocalDescription(offer);
-        setStatus("Aguardando alguém entrar…");
-
-        unsubs.push(
-          onValue(ref(db, `rooms/${ROOM}/answer`), async (snap) => {
-            const ans = snap.val();
-            if (!ans || !pc || pc.currentRemoteDescription) return;
-            log("← Answer recebida", "step");
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(ans));
-              await flushCandidates();
-              setStatus("Conectando…");
-            } catch (e) {
-              log("❌ setRemoteDescription: " + e.message, "err");
+          let gotStream = false;
+          const timeout = setTimeout(() => {
+            if (!gotStream && !S.manuallyDisconnected) {
+              setStatus("⚠ sem resposta", "warn");
+              $("#viewerPlaceholder").style.display = "grid";
+              $("#viewerPlaceholder").innerHTML =
+                "<div>⏱ A câmera não respondeu (15s).<br>" +
+                '<span style="font-size:11px;color:#666">Talvez esteja offline ou o ID está errado.</span></div>';
             }
-          }),
-        );
+          }, 15000);
 
-        unsubs.push(
-          onChildAdded(ref(db, `rooms/${ROOM}/answererCandidates`), (snap) => {
-            const c = snap.val();
-            if (c) addCandidate(new RTCIceCandidate(c));
-          }),
-        );
+          call.on("stream", (stream) => {
+            gotStream = true;
+            clearTimeout(timeout);
+            S.remoteStreams.set(remoteId, stream);
+            const v = $("#viewerVideo");
+            v.srcObject = stream;
+            v.muted = true; // sempre começa mudo (autoplay)
+            v.play().catch((err) => console.warn("play", err));
+            $("#viewerPlaceholder").style.display = "none";
+            $("#viewerCamId").textContent = remoteId;
+            setStatus("● ao vivo", "on");
+            startFps(v, null); // fps opcional (não exibido na barra)
+            $("#btnMute").textContent = "🔊 Ativar som";
+          });
 
-        unsubs.push(
-          onValue(ref(db, `rooms/${ROOM}/answerer`), (snap) => {
-            const v = snap.val();
-            if (v) answererSeen = true;
-            else if (answererSeen && pc && !hangingUp) {
-              log("⚠ O outro lado saiu da chamada", "warn");
-              hangUp();
-            }
-          }),
+          call.on("close", () => {
+            clearTimeout(timeout);
+            if (S.manuallyDisconnected) return;
+            setStatus("○ câmera desconectou", "off");
+            $("#viewerPlaceholder").style.display = "grid";
+            $("#viewerPlaceholder").innerHTML =
+              "<div>A câmera desconectou.<br>" +
+              '<span style="font-size:11px;color:#666">Tentando reconectar em 3s…</span></div>';
+            setTimeout(() => {
+              if (!S.manuallyDisconnected && S.mode === "viewer")
+                connectViewer();
+            }, 3000);
+          });
+
+          call.on("error", (err) => {
+            console.warn("[call]", err);
+            if (!S.manuallyDisconnected)
+              setStatus("⚠ " + (err.type || "erro"), "off");
+          });
+        } catch (e) {
+          console.error(e);
+          setStatus("⚠ " + (e.message || "erro"), "off");
+          $("#viewerPlaceholder").innerHTML =
+            "<div>❌ " + (e.message || "Erro ao conectar") + "</div>";
+        }
+      }
+
+      function disconnectViewer() {
+        S.manuallyDisconnected = true;
+        for (const call of S.calls.values()) {
+          try {
+            call.close();
+          } catch {}
+        }
+        S.calls.clear();
+        S.remoteStreams.clear();
+        const v = $("#viewerVideo");
+        if (v) v.srcObject = null;
+        $("#viewerPlaceholder").style.display = "grid";
+        $("#viewerPlaceholder").innerHTML =
+          "<div>Desconectado. Digite outro ID acima.</div>";
+        $("#viewerCamId").textContent = "—";
+        setStatus("○ desconectado", "off");
+      }
+
+      function toggleMute() {
+        const v = $("#viewerVideo");
+        if (!v || !v.srcObject) return;
+        v.muted = !v.muted;
+        if (!v.muted) v.play().catch(() => {});
+        $("#btnMute").textContent = v.muted ? "🔊 Ativar som" : "🔇 Mudo";
+      }
+
+      function snapshotViewer() {
+        const v = $("#viewerVideo");
+        if (!v || !v.videoWidth) {
+          toast("Sem imagem para capturar");
+          return;
+        }
+        const c = document.createElement("canvas");
+        c.width = v.videoWidth;
+        c.height = v.videoHeight;
+        c.getContext("2d").drawImage(v, 0, 0);
+        c.toBlob(
+          (blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download =
+              (S.calls.size ? [...S.calls.keys()][0] : "camera") +
+              "_" +
+              Date.now() +
+              ".jpg";
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            toast("📸 Snapshot salvo");
+          },
+          "image/jpeg",
+          0.92,
         );
       }
 
-      // ── virar "atendedor" ─────────────────────────────────
-      async function startAnswerer(offerData) {
-        isCaller = false;
-        newPeer();
-        localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-
-        // recebe o canal de dados criado pelo chamador
-        pc.ondatachannel = (e) => {
-          if (e.channel && e.channel.label === "motion")
-            setupMotionChannel(e.channel);
-        };
-
-        const presenceRef = ref(db, `rooms/${ROOM}/answerer`);
-        await set(presenceRef, true);
-        onDisconnect(presenceRef).remove();
-
-        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-        await flushCandidates();
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await update(roomRef, {
-          answer: { type: answer.type, sdp: answer.sdp },
-        });
-        log("✓ Answer enviada", "ok");
-        setStatus("Conectando…");
-
-        unsubs.push(
-          onChildAdded(ref(db, `rooms/${ROOM}/callerCandidates`), (snap) => {
-            const c = snap.val();
-            if (c) addCandidate(new RTCIceCandidate(c));
-          }),
-        );
-
-        unsubs.push(
-          onValue(roomRef, (snap) => {
-            if (!snap.exists() && !hangingUp) {
-              log("⚠ O outro lado encerrou a chamada", "warn");
-              hangUp();
-            }
-          }),
-        );
+      function fullscreenViewer() {
+        const wrap = document.querySelector(".viewer-video-wrap");
+        if (!wrap) return;
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (wrap.requestFullscreen)
+          wrap.requestFullscreen().catch(() => {});
       }
 
       /* ============================================================
-         RASTREAMENTO: câmera frontal "segue" o movimento da traseira
-         ============================================================ */
-
-      // troca a câmera principal para um facing específico
-      async function applyFacing(facing) {
-        if (!localStream) return;
-        log("Trocando câmera principal → " + facing, "step");
-        let stream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { exact: facing } },
-          });
-        } catch {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        }
-        const t = stream.getVideoTracks()[0];
-        if (pc) {
-          const sender = pc
-            .getSenders()
-            .find((x) => x.track && x.track.kind === "video");
-          if (sender) await sender.replaceTrack(t);
-        }
-        const old = localStream.getVideoTracks()[0];
-        if (old) {
-          old.stop();
-          localStream.removeTrack(old);
-        }
-        localStream.addTrack(t);
-        currentFacing = facing;
-        $("localVideo").srcObject = localStream;
-        $("localVideo").classList.toggle("rear", facing === "environment");
-        log("✓ Câmera principal trocada", "ok");
-      }
-
-      // área onde o PiP seguidor pode circular
-      function followerBounds() {
-        const pad = 16;
-        const minTop = 84;
-        const maxTop = Math.max(minTop, window.innerHeight - FOLLOW_H - 100);
-        const minLeft = pad;
-        const maxLeft = Math.max(minLeft, window.innerWidth - FOLLOW_W - pad);
-        return { minLeft, maxLeft, minTop, maxTop };
-      }
-
-      function sizeOverlay() {
-        const v = $("localVideo");
-        const c = $("motionCanvas");
-        if (!v || !c) return;
-        const r = v.getBoundingClientRect();
-        c.width = Math.max(1, Math.round(r.width));
-        c.height = Math.max(1, Math.round(r.height));
-        c.style.width = r.width + "px";
-        c.style.height = r.height + "px";
-        c.style.left = r.left + "px";
-        c.style.top = r.top + "px";
-      }
-
-      // movimento suave do PiP seguidor (roda a cada frame)
-      function updateFollower() {
-        if (!secondaryStream || !followerPos || !followerTarget) return;
-        const el = $("localVideo2");
-        const dx = followerTarget.left - followerPos.left;
-        const dy = followerTarget.top - followerPos.top;
-        if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4) return;
-        followerPos.left += dx * 0.16;
-        followerPos.top += dy * 0.16;
-        el.style.left = followerPos.left.toFixed(1) + "px";
-        el.style.top = followerPos.top.toFixed(1) + "px";
-      }
-
-      function drawMotionOverlay(active, box) {
-        const c = $("motionCanvas");
-        if (!c) return;
-        const g = c.getContext("2d");
-        g.clearRect(0, 0, c.width, c.height);
-        if (!active || !box) return;
-
-        const mirrored = !$("localVideo").classList.contains("rear");
-        const sx = c.width / MW;
-        const sy = c.height / MH;
-
-        let x0 = box.minX;
-        let x1 = box.maxX;
-        if (mirrored) {
-          x0 = MW - 1 - box.maxX;
-          x1 = MW - 1 - box.minX;
-        }
-
-        const rx = x0 * sx - 2;
-        const ry = box.minY * sy - 2;
-        const rw = (x1 - x0 + 1) * sx + 4;
-        const rh = (box.maxY - box.minY + 1) * sy + 4;
-
-        g.fillStyle = "rgba(239,68,68,0.14)";
-        g.fillRect(rx, ry, rw, rh);
-        g.strokeStyle = "#ef4444";
-        g.lineWidth = 2;
-        g.strokeRect(rx, ry, rw, rh);
-      }
-
-      // analisa um frame (roda ~10x por segundo)
-      function analyzeFrame(now) {
-        const v = $("localVideo");
-        if (!v || !v.videoWidth) return;
-
-        try {
-          actx.drawImage(v, 0, 0, MW, MH);
-        } catch {
-          return;
-        }
-        const d = actx.getImageData(0, 0, MW, MH).data;
-
-        // converte para luminância
-        const gray = new Uint8Array(MW * MH);
-        for (let i = 0, j = 0; i < d.length; i += 4, j++) {
-          gray[j] = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000;
-        }
-
-        let ratio = 0;
-        let cx = 0.5;
-        let cy = 0.5;
-        let box = null;
-
-        if (prevGray) {
-          let count = 0;
-          let sx = 0;
-          let sy = 0;
-          let minX = MW;
-          let minY = MH;
-          let maxX = -1;
-          let maxY = -1;
-
-          for (let y = 0; y < MH; y++) {
-            const row = y * MW;
-            for (let x = 0; x < MW; x++) {
-              const k = row + x;
-              const diff = gray[k] - prevGray[k];
-              if (diff > MOTION_PIXEL_DIFF || diff < -MOTION_PIXEL_DIFF) {
-                count++;
-                sx += x;
-                sy += y;
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
-              }
-            }
-          }
-
-          if (count > 0) {
-            ratio = count / (MW * MH);
-            cx = sx / count / (MW - 1);
-            cy = sy / count / (MH - 1);
-            box = { minX, minY, maxX, maxY };
-          }
-        }
-        prevGray = gray;
-
-        // histerese: continua "ativo" por MOTION_HOLD_MS após o último movimento
-        if (ratio > MOTION_MIN_RATIO) lastMotionAt = now;
-        const active = now - lastMotionAt < MOTION_HOLD_MS;
-        const changed = active !== motionActive;
-
-        if (changed) {
-          motionActive = active;
-          $("localVideo").classList.toggle("motion", active);
-          log(
-            active ? "🏃 Movimento detectado" : "· Movimento cessou",
-            active ? "step" : "l",
-          );
-        }
-
-        // avisa o outro lado (na transição e em heartbeat de 700ms)
-        if (active && (changed || now - lastSentAt > 700)) {
-          lastSentAt = now;
-          sendMotion(true, ratio);
-        } else if (!active && changed) {
-          sendMotion(false, 0);
-        }
-
-        drawMotionOverlay(active, box);
-
-        // câmera frontal "segue" o movimento da traseira
-        if (secondaryStream && followerTarget) {
-          const b = followerBounds();
-          if (active) {
-            const mirrored = !$("localVideo").classList.contains("rear");
-            const nx = mirrored ? 1 - cx : cx;
-            const ny = cy;
-            followerTarget = {
-              left: b.minLeft + nx * (b.maxLeft - b.minLeft),
-              top: b.minTop + ny * (b.maxTop - b.minTop),
-            };
-          } else {
-            // sem movimento → volta ao canto de descanso
-            followerTarget = { left: b.minLeft, top: b.maxTop };
-          }
-        }
-      }
-
-      // loop principal
-      function motionLoop(ts) {
-        if (!trackingOn) return;
-        motionRaf = requestAnimationFrame(motionLoop);
-        updateFollower();
-        if (ts - lastAnalyze < 90) return;
-        lastAnalyze = ts;
-        analyzeFrame(ts);
-      }
-
-      async function startTracking() {
-        if (!localStream) throw new Error("Câmera não iniciada");
-
-        trackingOn = true;
-        document.body.classList.add("tracking");
-        $("trackBtn").classList.add("on");
-
-        // 1) câmera principal passa a ser a traseira
-        if (currentFacing !== "environment") {
+   HOME / INIT
+   ============================================================ */
+      function goHome() {
+        stopCamera();
+        if (S.peer) {
           try {
-            await applyFacing("environment");
-          } catch (e) {
-            log("⚠ Não foi possível mudar p/ traseira: " + e.message, "warn");
+            S.peer.destroy();
+          } catch {}
+          S.peer = null;
+        }
+        S.calls.clear();
+        S.remoteStreams.clear();
+        showScreen("landing");
+        setStatus("○ idle", "off");
+      }
+
+      function init() {
+        // Relógio global
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Botões
+        $("#btnBeCamera").onclick = () => startCameraMode();
+        $("#btnBeViewer").onclick = () => startViewerMode();
+        $("#btnHome").onclick = () => goHome();
+
+        // Enter no input dispara conexão
+        $("#viewerInput").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            connectViewer();
           }
-        }
-
-        // 2) abre a câmera frontal como "seguidora"
-        try {
-          secondaryStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: "user" },
-              width: { ideal: 640 },
-              height: { ideal: 480 },
-            },
-            audio: false,
-          });
-
-          const mainId = localStream
-            .getVideoTracks()[0]
-            ?.getSettings().deviceId;
-          const secId = secondaryStream
-            .getVideoTracks()[0]
-            ?.getSettings().deviceId;
-
-          if (mainId && secId && mainId === secId) {
-            secondaryStream.getTracks().forEach((t) => {
-              try {
-                t.stop();
-              } catch {}
-            });
-            secondaryStream = null;
-            log(
-              "ℹ Só há uma câmera disponível — modo apenas com detecção de movimento",
-              "warn",
-            );
-          }
-        } catch (e) {
-          secondaryStream = null;
-          log(
-            "⚠ Segunda câmera indisponível (" +
-              e.name +
-              ") — só detecção de movimento",
-            "warn",
-          );
-        }
-
-        if (secondaryStream) {
-          const v2 = $("localVideo2");
-          v2.srcObject = secondaryStream;
-          v2.style.display = "block";
-
-          const b = followerBounds();
-          followerPos = { left: b.minLeft, top: b.maxTop };
-          followerTarget = { left: b.minLeft, top: b.maxTop };
-          v2.style.left = followerPos.left + "px";
-          v2.style.top = followerPos.top + "px";
-
-          log("✓ Câmera frontal ativa (segue o movimento)", "ok");
-        }
-
-        // 3) overlay + loop de detecção
-        $("motionCanvas").style.display = "block";
-        requestAnimationFrame(() => {
-          sizeOverlay();
         });
-        setTimeout(sizeOverlay, 300);
 
-        prevGray = null;
-        motionActive = false;
-        lastAnalyze = 0;
-        lastSentAt = 0;
-        lastMotionAt = 0;
-
-        if (motionRaf) cancelAnimationFrame(motionRaf);
-        motionRaf = requestAnimationFrame(motionLoop);
-
-        setStatus("Rastreamento ativo 🎯");
-        setTimeout(() => {
-          if ($("status").textContent === "Rastreamento ativo 🎯")
-            $("status").classList.add("hidden");
-        }, 2000);
-      }
-
-      function stopTracking() {
-        if (!trackingOn && !secondaryStream) return;
-        trackingOn = false;
-
-        if (motionRaf) {
-          cancelAnimationFrame(motionRaf);
-          motionRaf = null;
-        }
-        prevGray = null;
-        motionActive = false;
-        followerPos = null;
-        followerTarget = null;
-
-        if (secondaryStream) {
-          secondaryStream.getTracks().forEach((t) => {
+        // Limpa recursos ao fechar
+        window.addEventListener("beforeunload", () => {
+          if (S.localStream) S.localStream.getTracks().forEach((t) => t.stop());
+          if (S.peer) {
             try {
-              t.stop();
+              S.peer.destroy();
             } catch {}
-          });
-          secondaryStream = null;
-        }
+          }
+        });
 
-        const v2 = $("localVideo2");
-        if (v2) {
-          v2.srcObject = null;
-          v2.style.display = "none";
+        // Autostart via URL
+        const params = new URLSearchParams(location.search);
+        const watch = params.get("watch");
+        if (watch) {
+          startViewerMode(watch);
+        } else if (params.get("camera") === "1") {
+          startCameraMode();
         }
-
-        const c = $("motionCanvas");
-        if (c) {
-          const g = c.getContext("2d");
-          g.clearRect(0, 0, c.width, c.height);
-          c.style.display = "none";
-        }
-
-        document.body.classList.remove("tracking");
-        $("trackBtn")?.classList.remove("on");
-        $("localVideo")?.classList.remove("motion");
-
-        if (motionChannel && motionChannel.readyState === "open") {
-          try {
-            motionChannel.send(
-              JSON.stringify({ type: "motion", active: false, level: 0 }),
-            );
-          } catch {}
-        }
-        setRemoteMotion(false);
       }
 
-      window.toggleTracking = async () => {
-        if (!localStream) return;
-        if (trackingOn) {
-          stopTracking();
-          log("Rastreamento desligado", "l");
-          return;
-        }
-        try {
-          await startTracking();
-        } catch (e) {
-          log("❌ Rastreamento: " + e.message, "err");
-          stopTracking();
-        }
-      };
-
-      window.addEventListener("resize", () => {
-        if (trackingOn) {
-          sizeOverlay();
-          if (followerPos && followerTarget) {
-            const b = followerBounds();
-            followerPos.left = Math.min(
-              Math.max(followerPos.left, b.minLeft),
-              b.maxLeft,
-            );
-            followerPos.top = Math.min(
-              Math.max(followerPos.top, b.minTop),
-              b.maxTop,
-            );
-          }
-        }
-      });
-
-      // ── controles ─────────────────────────────────────────
-      window.toggleMic = () => {
-        if (!localStream) return;
-        const a = localStream.getAudioTracks()[0];
-        if (!a) return;
-        micEnabled = !micEnabled;
-        a.enabled = micEnabled;
-        $("micBtn").classList.toggle("off", !micEnabled);
-        log(micEnabled ? "🎤 Microfone ligado" : "🔇 Microfone desligado", "l");
-      };
-
-      window.switchCamera = async () => {
-        if (!localStream) return;
-        if (trackingOn) {
-          log("Rastreamento desligado para trocar de câmera", "warn");
-          stopTracking();
-        }
-        try {
-          await applyFacing(currentFacing === "user" ? "environment" : "user");
-        } catch (e) {
-          log("❌ " + e.message, "err");
-        }
-      };
-
-      window.hangUp = async () => {
-        if (hangingUp) return;
-        hangingUp = true;
-        clearTimeout(waitTimer);
-
-        const wasCaller = isCaller;
-        const wasRoom = roomRef;
-
-        stopTracking();
-        cleanupLocal();
-
-        if (wasRoom && db) {
-          try {
-            if (wasCaller) await remove(wasRoom);
-            else await remove(ref(db, `rooms/${ROOM}/answerer`));
-          } catch {}
-        }
-
-        $("remoteVideo").srcObject = null;
-        $("localVideo").srcObject = null;
-        $("localVideo2").srcObject = null;
-        $("call").style.display = "none";
-        $("lobby").style.display = "flex";
-        $("goBtn").disabled = false;
-        $("micBtn").classList.remove("off");
-        $("status").classList.add("hidden");
-        $("cancelWait").style.display = "none";
-        setLobbyStatus("");
-        micEnabled = true;
-        $("log").innerHTML = "";
-
-        hangingUp = false;
-      };
-
-      window.addEventListener("beforeunload", () => {
-        stopTracking();
-        try {
-          if (pc) pc.close();
-        } catch {}
-        if (localStream) localStream.getTracks().forEach((t) => t.stop());
-      });
+      window.addEventListener("DOMContentLoaded", init);
     </script>
   </body>
 </html>
