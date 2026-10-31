@@ -23,8 +23,6 @@
         height: 100vh;
         overflow: hidden;
       }
-
-      /* LOBBY */
       #lobby {
         display: flex;
         flex-direction: column;
@@ -39,6 +37,7 @@
         background: linear-gradient(135deg, #4f8cff, #a855f7);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
       #lobby p {
         color: #8892b0;
@@ -115,8 +114,6 @@
         text-align: center;
         display: none;
       }
-
-      /* CALL */
       #call {
         display: none;
         height: 100vh;
@@ -140,6 +137,7 @@
         border: 2px solid rgba(255, 255, 255, 0.2);
         transform: scaleX(-1);
         z-index: 10;
+        background: #111;
       }
       #localVideo.rear {
         transform: none;
@@ -148,24 +146,29 @@
         position: absolute;
         top: 16px;
         left: 16px;
-        background: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.75);
         backdrop-filter: blur(10px);
-        padding: 8px 14px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 2px;
+        padding: 12px 18px;
+        border-radius: 12px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         z-index: 10;
         cursor: pointer;
         user-select: none;
         display: flex;
-        gap: 6px;
+        gap: 10px;
         align-items: center;
       }
       #roomBadge span:first-child {
         font-weight: 400;
         color: #8892b0;
         letter-spacing: 0;
+        font-size: 14px;
+      }
+      #roomCode {
+        color: #4f8cff;
       }
       #controls {
         position: absolute;
@@ -211,6 +214,9 @@
         font-size: 13px;
         z-index: 10;
         white-space: nowrap;
+        max-width: 90vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       #log {
         position: absolute;
@@ -248,35 +254,17 @@
         color: #60a5fa;
         font-weight: 600;
       }
-      #log-toggle {
-        position: absolute;
-        bottom: calc(35vh - 26px);
-        right: 8px;
-        z-index: 21;
-        background: #1a1f2e;
-        border: 1px solid #2a3348;
-        color: #8892b0;
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        display: none;
-      }
-      #call.show-log #log-toggle {
-        display: block;
-      }
       .hidden {
         display: none !important;
       }
     </style>
   </head>
   <body>
-    <!-- LOBBY -->
     <div id="lobby">
       <h1>📹 Vídeo Chamada P2P</h1>
       <p>WebRTC · Firebase · câmera frontal/traseira</p>
       <div id="config-warn">
-        ⚠️ Preencha <code>firebaseConfig</code> no código antes de testar
+        ⚠️ Preencha <code>firebaseConfig</code> no código
       </div>
       <button class="btn-primary" id="createBtn" onclick="createRoom()">
         ➕ Criar Nova Sala
@@ -289,16 +277,16 @@
           placeholder="CÓDIGO"
           maxlength="6"
           autocomplete="off"
+          spellcheck="false"
         />
         <button class="btn-primary" onclick="joinRoom()">Entrar</button>
       </div>
     </div>
 
-    <!-- CALL -->
     <div id="call">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideo" autoplay playsinline muted></video>
-      <div id="roomBadge" onclick="copyRoomCode()">
+      <div id="roomBadge" onclick="copyRoomCode()" title="Clique para copiar">
         <span>Sala:</span><span id="roomCode">------</span>
       </div>
       <div id="status">Preparando…</div>
@@ -334,10 +322,12 @@
         </button>
       </div>
       <div id="log" class="collapsed"></div>
-      <button id="log-toggle" onclick="toggleLog()">mostrar/ocultar log</button>
     </div>
 
     <script type="module">
+      /* ═══════════════════════════════════════════════════════════════
+         IMPORTS (CDN — não precisa de bundler)
+         ═══════════════════════════════════════════════════════════════ */
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
       import {
         getDatabase,
@@ -349,69 +339,108 @@
         onChildAdded,
         remove,
         onDisconnect,
+        get,
       } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-      /* ═══ 1. SUA CONFIG FIREBASE ═══ */
+      /* ═══════════════════════════════════════════════════════════════
+         CONFIG FIREBASE (única, já preenchida)
+         ═══════════════════════════════════════════════════════════════ */
       const firebaseConfig = {
         apiKey: "AIzaSyBIBtPaaLcevEy3PXdLaOp77UmURT_zZaE",
         authDomain: "trader-b13c9.firebaseapp.com",
-        databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com", // ⚠️ região pode variar
+        databaseURL: "https://trader-b13c9-default-rtdb.firebaseio.com",
         projectId: "trader-b13c9",
         storageBucket: "trader-b13c9.firebasestorage.app",
         messagingSenderId: "127165287666",
         appId: "1:127165287666:web:9b89e35bfb3fbb0ba1546b",
+        measurementId: "G-TM60VT87GY",
       };
 
-      /* ═══ 2. LOG VISÍVEL ═══ */
+      /* ═══════════════════════════════════════════════════════════════
+         LOG
+         ═══════════════════════════════════════════════════════════════ */
       const logEl = () => document.getElementById("log");
       function log(msg, cls = "l") {
         const el = logEl();
-        if (!el) return;
-        const line = document.createElement("div");
-        line.className = cls;
-        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-        el.appendChild(line);
-        el.scrollTop = el.scrollHeight;
+        if (el) {
+          const line = document.createElement("div");
+          line.className = cls;
+          line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+          el.appendChild(line);
+          el.scrollTop = el.scrollHeight;
+        }
         console.log(`[${cls}]`, msg);
       }
       window.toggleLog = () => logEl().classList.toggle("collapsed");
 
-      /* ═══ 3. FIREBASE INIT COM TRATAMENTO ═══ */
-      let db;
+      /* ═══════════════════════════════════════════════════════════════
+         INIT FIREBASE
+         ═══════════════════════════════════════════════════════════════ */
+      let app = null;
+      let db = null;
       try {
-        if (firebaseConfig.apiKey.includes("SUA_")) {
-          document.getElementById("config-warn").style.display = "block";
-          log("❌ firebaseConfig não preenchido!", "err");
-        } else {
-          const app = initializeApp(firebaseConfig);
-          db = getDatabase(app);
-          log("✓ Firebase inicializado", "ok");
-        }
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+        log("✓ Firebase inicializado", "ok");
       } catch (e) {
         log("❌ Erro Firebase: " + e.message, "err");
+        document.getElementById("config-warn").style.display = "block";
       }
 
-      /* ═══ 4. WEBRTC ═══ */
+      /* ═══════════════════════════════════════════════════════════════
+         WEBRTC CONFIG (STUN + TURN público)
+         ═══════════════════════════════════════════════════════════════ */
       const rtcConfig = {
         iceServers: [
           { urls: "stun:stun.l.google.com:19302" },
           { urls: "stun:stun1.l.google.com:19302" },
           { urls: "stun:stun.cloudflare.com:3478" },
+          {
+            urls: "turn:openrelay.metered.ca:80",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
+          {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+          },
         ],
       };
 
-      let pc = null,
-        localStream = null,
-        roomId = null;
-      let currentFacing = "user",
-        micEnabled = true,
-        unsubs = [];
+      /* ═══════════════════════════════════════════════════════════════
+         ESTADO
+         ═══════════════════════════════════════════════════════════════ */
+      let pc = null;
+      let localStream = null;
+      let roomId = null;
+      let currentFacing = "user";
+      let micEnabled = true;
+      let unsubs = [];
       let pendingCandidates = [];
+      let isCaller = false;
+      let answererSeen = false;
+      let hangingUp = false;
+
+      /* ═══════════════════════════════════════════════════════════════
+         HELPERS
+         ═══════════════════════════════════════════════════════════════ */
+      function genCode() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I
+        let c = "";
+        for (let i = 0; i < 6; i++)
+          c += chars[Math.floor(Math.random() * chars.length)];
+        return c;
+      }
 
       async function startCamera(facing = "user") {
-        if (!navigator.mediaDevices?.getUserMedia) {
+        if (!navigator.mediaDevices?.getUserMedia)
           throw new Error("getUserMedia indisponível — use HTTPS ou localhost");
-        }
         return navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: facing },
@@ -422,7 +451,6 @@
         });
       }
 
-      /* fila de candidatos: só adiciona quando a SDP remota estiver pronta */
       async function addCandidate(c) {
         if (!pc) return;
         if (pc.remoteDescription && pc.remoteDescription.type) {
@@ -437,8 +465,11 @@
           log(`⏸ ICE na fila (${pendingCandidates.length})`, "warn");
         }
       }
+
       async function flushCandidates() {
-        log(`▶ Liberando ${pendingCandidates.length} candidatos`, "step");
+        if (!pc) return;
+        if (pendingCandidates.length)
+          log(`▶ Liberando ${pendingCandidates.length} candidatos`, "step");
         for (const c of pendingCandidates) {
           try {
             await pc.addIceCandidate(c);
@@ -449,8 +480,23 @@
         pendingCandidates = [];
       }
 
+      function setStatus(m) {
+        const el = document.getElementById("status");
+        el.textContent = m;
+        el.classList.remove("hidden");
+      }
+
+      function markConnected() {
+        setStatus("Conectado ✓");
+        setTimeout(() => {
+          const el = document.getElementById("status");
+          if (el.textContent === "Conectado ✓") el.classList.add("hidden");
+        }, 2500);
+      }
+
       function newPeer() {
         pc = new RTCPeerConnection(rtcConfig);
+
         pc.onicecandidate = (e) => {
           if (e.candidate && roomId) {
             push(
@@ -463,42 +509,63 @@
             log("→ ICE enviado", "l");
           }
         };
+
         pc.ontrack = (e) => {
           log("🎥 Vídeo remoto chegou!", "ok");
-          document.getElementById("remoteVideo").srcObject = e.streams[0];
-          setStatus("Conectado ✓");
-          setTimeout(
-            () => document.getElementById("status").classList.add("hidden"),
-            2500,
-          );
-        };
-        pc.oniceconnectionstatechange = () => {
-          log(
-            "ICE state: " + pc.iceConnectionState,
-            pc.iceConnectionState === "failed" ? "err" : "l",
-          );
-          if (["connected", "completed"].includes(pc.iceConnectionState)) {
-            setStatus("Conectado ✓");
-            setTimeout(
-              () => document.getElementById("status").classList.add("hidden"),
-              2500,
+          const rv = document.getElementById("remoteVideo");
+          rv.srcObject = e.streams[0];
+          rv.play().catch(() => {
+            log("⚠ Autoplay bloqueado — toque na tela", "warn");
+            document.body.addEventListener(
+              "click",
+              () => rv.play().catch(() => {}),
+              { once: true },
             );
-          }
-          if (pc.iceConnectionState === "failed")
-            setStatus("Falha de conexão (NAT?)");
+          });
+          markConnected();
         };
+
+        pc.oniceconnectionstatechange = () => {
+          if (!pc) return;
+          const st = pc.iceConnectionState;
+          log("ICE state: " + st, st === "failed" ? "err" : "l");
+          if (st === "connected" || st === "completed") markConnected();
+          if (st === "failed") setStatus("Falha de conexão (NAT?)");
+        };
+
         return pc;
       }
 
-      let isCaller = false;
+      function showCall() {
+        document.getElementById("lobby").style.display = "none";
+        document.getElementById("call").style.display = "block";
+        document.getElementById("localVideo").srcObject = localStream;
+        document.getElementById("roomCode").textContent = roomId;
+        document
+          .getElementById("localVideo")
+          .classList.toggle("rear", currentFacing === "environment");
+      }
 
-      /* ═══ 5. CALLER ═══ */
+      /* ═══════════════════════════════════════════════════════════════
+         CALLER — criar sala
+         ═══════════════════════════════════════════════════════════════ */
       window.createRoom = async () => {
         if (!db) return alert("Configure o Firebase primeiro");
-        document.getElementById("createBtn").disabled = true;
+        const btn = document.getElementById("createBtn");
+        btn.disabled = true;
+
         try {
           isCaller = true;
-          roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+          answererSeen = false;
+
+          // gera código único
+          for (let i = 0; i < 5 && !roomId; i++) {
+            const candidate = genCode();
+            const snap = await get(ref(db, `rooms/${candidate}`));
+            if (!snap.exists()) roomId = candidate;
+          }
+          if (!roomId) throw new Error("Não foi possível gerar código único");
+
           log("Criando sala " + roomId, "step");
 
           localStream = await startCamera(currentFacing);
@@ -508,30 +575,39 @@
           newPeer();
           localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
-          const roomRef = ref(db, `rooms/${roomId}`);
-          await set(roomRef, { createdAt: Date.now(), offer: null });
-          onDisconnect(roomRef).remove();
-          log("✓ Sala salva no Firebase", "ok");
-
           const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          await update(roomRef, {
+          const roomRef = ref(db, `rooms/${roomId}`);
+
+          // Grava a sala ANTES de setLocalDescription, para que o "set"
+          // não apague candidatos ICE que já tenham chegado.
+          await set(roomRef, {
+            createdAt: Date.now(),
             offer: { type: offer.type, sdp: offer.sdp },
           });
-          log("✓ Offer enviada", "ok");
+          onDisconnect(roomRef).remove();
+          log("✓ Sala salva com offer", "ok");
+
+          // só agora começa a coleta de ICE (sala já existe)
+          await pc.setLocalDescription(offer);
           setStatus("Aguardando alguém entrar…");
 
+          // answer recebida
           unsubs.push(
             onValue(ref(db, `rooms/${roomId}/answer`), async (snap) => {
               const ans = snap.val();
-              if (!ans || pc.currentRemoteDescription) return;
+              if (!ans || !pc || pc.currentRemoteDescription) return;
               log("← Answer recebida", "step");
-              await pc.setRemoteDescription(new RTCSessionDescription(ans));
-              await flushCandidates();
-              setStatus("Conectando…");
+              try {
+                await pc.setRemoteDescription(new RTCSessionDescription(ans));
+                await flushCandidates();
+                setStatus("Conectando…");
+              } catch (e) {
+                log("❌ setRemoteDescription: " + e.message, "err");
+              }
             }),
           );
 
+          // candidatos do answerer
           unsubs.push(
             onChildAdded(
               ref(db, `rooms/${roomId}/answererCandidates`),
@@ -541,14 +617,29 @@
               },
             ),
           );
+
+          // presença do answerer (detecta quando ele sai)
+          unsubs.push(
+            onValue(ref(db, `rooms/${roomId}/answerer`), (snap) => {
+              const v = snap.val();
+              if (v) {
+                answererSeen = true;
+              } else if (answererSeen && pc && !hangingUp) {
+                log("⚠ O outro lado saiu da chamada", "warn");
+                hangUp();
+              }
+            }),
+          );
         } catch (e) {
           log("❌ " + e.message, "err");
           alert(e.message);
-          document.getElementById("createBtn").disabled = false;
+          btn.disabled = false;
         }
       };
 
-      /* ═══ 6. ANSWERER ═══ */
+      /* ═══════════════════════════════════════════════════════════════
+         ANSWERER — entrar na sala
+         ═══════════════════════════════════════════════════════════════ */
       window.joinRoom = async () => {
         if (!db) return alert("Configure o Firebase primeiro");
         const code = document
@@ -556,10 +647,25 @@
           .value.trim()
           .toUpperCase();
         if (code.length < 4) return alert("Código inválido");
+
         try {
           isCaller = false;
           roomId = code;
           log("Entrando na sala " + roomId, "step");
+
+          const roomSnap = await get(ref(db, `rooms/${roomId}`));
+          if (!roomSnap.exists()) {
+            alert("Sala não encontrada: " + roomId + "\n\nVerifique o código.");
+            log("❌ Sala não existe", "err");
+            roomId = null;
+            return;
+          }
+          if (!roomSnap.val().offer) {
+            alert("Sala existe, mas sem offer (chamador saiu?)");
+            log("⚠ Sala sem offer", "warn");
+            roomId = null;
+            return;
+          }
 
           localStream = await startCamera(currentFacing);
           log("✓ Câmera local ok", "ok");
@@ -570,24 +676,34 @@
 
           const roomRef = ref(db, `rooms/${roomId}`);
 
-          /* escuta a offer (aguenta se ainda não existir) */
+          // presença: se fechar a aba, o caller sabe
+          const presenceRef = ref(db, `rooms/${roomId}/answerer`);
+          await set(presenceRef, true);
+          onDisconnect(presenceRef).remove();
+
+          // offer
           unsubs.push(
             onValue(ref(db, `rooms/${roomId}/offer`), async (snap) => {
               const offer = snap.val();
-              if (!offer || pc.currentRemoteDescription) return;
+              if (!offer || !pc || pc.currentRemoteDescription) return;
               log("← Offer recebida", "step");
-              await pc.setRemoteDescription(new RTCSessionDescription(offer));
-              await flushCandidates();
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              await update(roomRef, {
-                answer: { type: answer.type, sdp: answer.sdp },
-              });
-              log("✓ Answer enviada", "ok");
-              setStatus("Conectando…");
+              try {
+                await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                await flushCandidates();
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                await update(roomRef, {
+                  answer: { type: answer.type, sdp: answer.sdp },
+                });
+                log("✓ Answer enviada", "ok");
+                setStatus("Conectando…");
+              } catch (e) {
+                log("❌ Answer: " + e.message, "err");
+              }
             }),
           );
 
+          // candidatos do caller
           unsubs.push(
             onChildAdded(
               ref(db, `rooms/${roomId}/callerCandidates`),
@@ -598,41 +714,25 @@
             ),
           );
 
-          /* avisa se a sala não existir em 5s */
-          setTimeout(async () => {
-            if (!pc.currentRemoteDescription) {
-              const snap = await onValue(
-                ref(db, `rooms/${roomId}/offer`),
-                () => {},
-                { onlyOnce: true },
-              );
-              if (!snap?.val()) {
-                setStatus("Sala não encontrada");
-                log("❌ Sala não existe (ainda)", "err");
+          // sala removida = chamador encerrou
+          unsubs.push(
+            onValue(roomRef, (snap) => {
+              if (!snap.exists() && pc && !hangingUp) {
+                log("⚠ Chamador encerrou a sala", "warn");
+                hangUp();
               }
-            }
-          }, 5000);
+            }),
+          );
         } catch (e) {
           log("❌ " + e.message, "err");
           alert(e.message);
+          roomId = null;
         }
       };
 
-      /* ═══ 7. UI ═══ */
-      function showCall() {
-        document.getElementById("lobby").style.display = "none";
-        document.getElementById("call").style.display = "block";
-        document.getElementById("call").classList.add("show-log");
-        document.getElementById("localVideo").srcObject = localStream;
-        document.getElementById("roomCode").textContent = roomId;
-        document
-          .getElementById("localVideo")
-          .classList.toggle("rear", currentFacing === "environment");
-      }
-      function setStatus(m) {
-        document.getElementById("status").textContent = m;
-      }
-
+      /* ═══════════════════════════════════════════════════════════════
+         CONTROLES
+         ═══════════════════════════════════════════════════════════════ */
       window.toggleMic = () => {
         if (!localStream) return;
         const a = localStream.getAudioTracks()[0];
@@ -640,6 +740,7 @@
         micEnabled = !micEnabled;
         a.enabled = micEnabled;
         document.getElementById("micBtn").classList.toggle("off", !micEnabled);
+        log(micEnabled ? "🎤 Microfone ligado" : "🔇 Microfone desligado", "l");
       };
 
       window.switchCamera = async () => {
@@ -648,19 +749,29 @@
         log("Trocando câmera → " + currentFacing, "step");
         try {
           const s = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: currentFacing } },
+            video: {
+              facingMode: { ideal: currentFacing },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
           });
           const t = s.getVideoTracks()[0];
+
           if (pc) {
             const sender = pc
               .getSenders()
-              .find((x) => x.track?.kind === "video");
+              .find((x) => x.track && x.track.kind === "video");
             if (sender) await sender.replaceTrack(t);
           }
+
           const old = localStream.getVideoTracks()[0];
-          old?.stop();
-          localStream.removeTrack(old);
+          if (old) {
+            old.stop();
+            localStream.removeTrack(old);
+          }
           localStream.addTrack(t);
+
+          document.getElementById("localVideo").srcObject = localStream;
           document
             .getElementById("localVideo")
             .classList.toggle("rear", currentFacing === "environment");
@@ -671,28 +782,47 @@
       };
 
       window.hangUp = async () => {
+        if (hangingUp) return;
+        hangingUp = true;
+
         unsubs.forEach((u) => {
           try {
             u();
           } catch {}
         });
         unsubs = [];
+
         if (pc) {
-          pc.close();
+          try {
+            pc.close();
+          } catch {}
           pc = null;
         }
+
         if (localStream) {
-          localStream.getTracks().forEach((t) => t.stop());
+          localStream.getTracks().forEach((t) => {
+            try {
+              t.stop();
+            } catch {}
+          });
           localStream = null;
         }
+
         if (roomId) {
           try {
-            await remove(ref(db, `rooms/${roomId}`));
+            if (isCaller) {
+              await remove(ref(db, `rooms/${roomId}`));
+            } else {
+              await remove(ref(db, `rooms/${roomId}/answerer`));
+            }
           } catch {}
         }
+
         pendingCandidates = [];
         roomId = null;
         isCaller = false;
+        answererSeen = false;
+
         document.getElementById("remoteVideo").srcObject = null;
         document.getElementById("localVideo").srcObject = null;
         document.getElementById("call").style.display = "none";
@@ -701,23 +831,54 @@
         document.getElementById("createBtn").disabled = false;
         document.getElementById("micBtn").classList.remove("off");
         document.getElementById("status").classList.remove("hidden");
+        document.getElementById("status").textContent = "Preparando…";
+        micEnabled = true;
         logEl().innerHTML = "";
+
+        hangingUp = false;
       };
 
       window.copyRoomCode = async () => {
         if (!roomId) return;
         try {
           await navigator.clipboard.writeText(roomId);
-          alert("Copiado: " + roomId);
+          alert("✅ Código copiado: " + roomId);
         } catch {
-          alert("Código: " + roomId);
+          prompt("Copie o código:", roomId);
         }
       };
 
+      /* ═══════════════════════════════════════════════════════════════
+         EXTRAS DE UX
+         ═══════════════════════════════════════════════════════════════ */
+      const roomInput = document.getElementById("roomInput");
+      roomInput.addEventListener("input", (e) => {
+        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      });
+      roomInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") window.joinRoom();
+      });
+
       window.addEventListener("beforeunload", () => {
-        if (pc) pc.close();
+        try {
+          if (pc) pc.close();
+        } catch {}
         if (localStream) localStream.getTracks().forEach((t) => t.stop());
       });
+
+      /* ═══════════════════════════════════════════════════════════════
+         ANALYTICS (opcional — não quebra nada se falhar)
+         ═══════════════════════════════════════════════════════════════ */
+      import("https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js")
+        .then(async ({ getAnalytics, isSupported }) => {
+          if (await isSupported()) {
+            getAnalytics(app);
+            log("✓ Analytics ativo", "ok");
+          } else {
+            log("ℹ Analytics não suportado neste ambiente", "l");
+          }
+        })
+        .catch(() => log("ℹ Analytics indisponível (normal em file://)", "l"));
     </script>
   </body>
 </html>
